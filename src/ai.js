@@ -4,6 +4,11 @@ const DEFAULTS = {
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     model: 'gemini-2.5-flash',
   },
+  anthropic: {
+    label: 'Anthropic Claude',
+    baseUrl: 'https://api.anthropic.com/v1/messages',
+    model: 'claude-sonnet-4-6',
+  },
   inception: {
     label: 'Inception Labs Mercury',
     baseUrl: 'https://api.inceptionlabs.ai/v1/chat/completions',
@@ -21,7 +26,7 @@ export function providerDefaults(provider) {
 }
 
 export function validateAIConfig(config) {
-  if (!['gemini', 'inception', 'openai'].includes(config.provider)) throw new Error('Choose Gemini, Inception Mercury or another OpenAI-compatible provider.');
+  if (!['gemini', 'anthropic', 'inception', 'openai'].includes(config.provider)) throw new Error('Choose Gemini, Claude, Inception Mercury or another OpenAI-compatible provider.');
   const url = new URL(config.baseUrl);
   if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') throw new Error('Use an HTTPS endpoint, or localhost for a trusted local model.');
   if (!String(config.model || '').trim()) throw new Error('Enter a model name.');
@@ -94,15 +99,42 @@ async function requestOpenAI(config, apiKey, prompt, attachment, signal) {
   return text.trim();
 }
 
+function anthropicEndpoint(config) {
+  return config.baseUrl.endsWith('/v1/messages') ? config.baseUrl : `${config.baseUrl}/v1/messages`;
+}
+
+async function requestAnthropic(config, apiKey, prompt, attachment, signal) {
+  if (attachment?.base64 && attachment.mimeType === 'application/pdf') throw new Error('Direct PDF upload is not enabled for this Claude adapter. Extract the PDF to text or use Gemini for paper conversion.');
+  let content = [{ type: 'text', text: prompt }];
+  if (attachment?.text) content.push({ type: 'text', text: `\n\nATTACHED FILE: ${attachment.name}\n${attachment.text}` });
+  if (attachment?.base64 && attachment.mimeType.startsWith('image/')) content.push({ type: 'image', source: { type: 'base64', media_type: attachment.mimeType, data: attachment.base64 } });
+  const response = await fetch(anthropicEndpoint(config), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({ model: config.model, max_tokens: Number(config.maxTokens || 4096), messages: [{ role: 'user', content }] }),
+    signal,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || `Claude request failed (${response.status}).`);
+  const text = Array.isArray(payload?.content) ? payload.content.map((block) => block?.text || '').join('\n').trim() : '';
+  if (!text) throw new Error('Claude returned no text. Check the model name and account access.');
+  return text;
+}
+
 export async function callAI({ config, apiKey, prompt, attachment = null, timeoutMs = 90000 }) {
   const safeConfig = validateAIConfig(config);
   if (!apiKey && !(safeConfig.provider === 'openai' && safeConfig.authMode === 'none')) throw new Error('Enter an API key, or choose no authentication for a trusted local OpenAI-compatible endpoint.');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return safeConfig.provider === 'gemini'
-      ? await requestGemini(safeConfig, apiKey, prompt, attachment, controller.signal)
-      : await requestOpenAI(safeConfig, apiKey, prompt, attachment, controller.signal);
+    if (safeConfig.provider === 'gemini') return await requestGemini(safeConfig, apiKey, prompt, attachment, controller.signal);
+    if (safeConfig.provider === 'anthropic') return await requestAnthropic(safeConfig, apiKey, prompt, attachment, controller.signal);
+    return await requestOpenAI(safeConfig, apiKey, prompt, attachment, controller.signal);
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('The model request timed out.');
     if (error instanceof TypeError) throw new Error('The browser could not reach the endpoint. Check the URL, internet connection and the provider’s CORS policy.');
