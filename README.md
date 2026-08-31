@@ -31,6 +31,7 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 Supported connection modes:
 
 - Google Gemini REST API
+- Anthropic Claude Messages API
 - Inception Labs Mercury (`mercury-2`) preset
 - Other OpenAI-compatible chat-completions endpoints
 - Trusted local OpenAI-compatible endpoints without authentication
