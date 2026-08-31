@@ -5,6 +5,7 @@ const KEYS = {
   settings: 'po-prep-settings-v1',
   tests: 'po-prep-tests-v2',
   aiConfig: 'po-prep-ai-config-v1',
+  tutor: 'po-prep-tutor-v1',
 };
 
 const memoryFallback = new Map();
@@ -48,6 +49,9 @@ export const storage = {
   saveTests: (tests) => write(KEYS.tests, tests),
   loadAIConfig: () => sanitizeConfig(read(KEYS.aiConfig, null)),
   saveAIConfig: (config) => write(KEYS.aiConfig, sanitizeConfig(config)),
+  loadTutor: () => read(KEYS.tutor, []),
+  saveTutor: (messages) => write(KEYS.tutor, messages),
+  clearTutor: () => remove(KEYS.tutor),
   clearAll: () => Object.values(KEYS).forEach(remove),
   exportAll: () => ({
     schemaVersion: 2,
@@ -57,5 +61,6 @@ export const storage = {
     tests: read(KEYS.tests, []),
     settings: read(KEYS.settings, {}),
     aiConfig: sanitizeConfig(read(KEYS.aiConfig, null)),
+    tutor: read(KEYS.tutor, []),
   }),
 };
