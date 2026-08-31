@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0789bb">
+  <meta name="description" content="Private offline exam simulator, question bank and optional AI coach">
+  <title>Prep Studio — Ultimate Exam Practice</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app" class="loading-shell">
+    <div class="loading-card"><strong>Prep Studio</strong><span>Loading your private exam workspace…</span></div>
+  </div>
+  <noscript><div class="fatal">JavaScript is required to run this application.</div></noscript>
+  <input id="question-import" type="file" accept="application/json,.json" hidden>
+  <input id="backup-import" type="file" accept="application/json,.json" hidden>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>

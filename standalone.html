@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0789bb"><meta name="description" content="Private offline exam simulator, question bank and optional AI coach">
+<title>Prep Studio — Ultimate Exam Practice</title><style>:root{--bg:#f3f6fa;--surface:#fff;--surface2:#f7f9fc;--ink:#172033;--muted:#68758a;--line:#dbe1ea;--navy:#0f2042;--navy2:#182f5c;--blue:#1677ff;--cyan:#078fbd;--green:#169b52;--red:#d84040;--purple:#8448b7;--orange:#ee8a24;--shadow:0 12px 35px rgba(23,32,51,.08);--radius:14px}body.dark{--bg:#111827;--surface:#172033;--surface2:#1d293b;--ink:#edf2ff;--muted:#9daac0;--line:#304058;--shadow:0 12px 35px rgba(0,0,0,.25)}*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}.hidden{display:none!important}.loading-shell{min-height:100vh;display:grid;place-items:center}.loading-card{display:grid;gap:7px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--blue);padding:24px 28px;box-shadow:var(--shadow)}.fatal{margin:30px;padding:20px;border:1px solid #e4aaaa;background:#fff2f2;color:#8a2424}.muted{color:var(--muted)}.ok{color:var(--green)}.bad{color:var(--red)}.skip{color:#b46d17}.pending{color:var(--purple)}
+/* application shell */.app-shell{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr)}.sidebar{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,var(--navy),#09152e);color:#fff;padding:20px 14px;display:flex;flex-direction:column}.side-brand{display:flex;gap:11px;align-items:center;padding:4px 8px 22px;font-weight:800}.side-logo{width:40px;height:40px;background:#fff;color:var(--navy);border-radius:11px;display:grid;place-items:center}.side-brand small{display:block;color:#9fc4ff;font-weight:500;margin-top:2px}.nav{display:grid;gap:5px}.nav-btn{display:flex;align-items:center;gap:11px;border:0;background:transparent;color:#c7d5ef;padding:11px 12px;border-radius:9px;text-align:left}.nav-btn:hover,.nav-btn.active{background:#ffffff16;color:#fff}.nav-icon{width:22px;text-align:center}.side-foot{margin-top:auto;border-top:1px solid #ffffff20;padding:14px 8px 0;font-size:11px;color:#9fb0cc;line-height:1.45}.main-area{min-width:0}.topbar{height:66px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 25px;position:sticky;top:0;z-index:8}.topbar h1{font-size:19px;margin:0}.top-actions{display:flex;gap:8px}.content{max-width:1250px;margin:auto;padding:24px}.btn{border:1px solid #8795a8;background:var(--surface);color:var(--ink);padding:9px 13px;border-radius:8px;font-size:12px;font-weight:750}.btn:hover{filter:brightness(.98)}.btn.primary{background:var(--blue);border-color:#0d63db;color:#fff}.btn.secondary{background:#eaf2ff;border-color:#bfd3f4;color:#225fa9}.btn.purple{background:var(--purple);border-color:#71369f;color:#fff}.btn.orange{background:var(--orange);border-color:#cc6e12;color:#fff}.btn.danger{background:#fff0f0;border-color:#e2b1b1;color:#a62929}.btn.small{padding:6px 9px;font-size:11px}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.card-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.card-head h2,.card-head h3{margin:0;font-size:15px}.card-body{padding:16px}.hero{background:linear-gradient(120deg,#10234b,#17468f 65%,#1677ff);color:#fff;border-radius:18px;padding:27px;display:grid;grid-template-columns:1.4fr .6fr;gap:20px;box-shadow:0 18px 45px rgba(16,35,75,.18)}.hero h2{font-size:30px;line-height:1.1;margin:0 0 10px}.hero p{color:#dce8ff;line-height:1.55;margin:0}.hero-side{background:#ffffff14;border:1px solid #ffffff24;border-radius:13px;padding:16px;display:flex;flex-direction:column;justify-content:center}.hero-side b{font-size:26px}.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px}.metric small{display:block;color:var(--muted);margin-bottom:5px}.metric b{font-size:22px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.stack{display:grid;gap:14px}.notice{padding:12px 14px;border:1px solid #b9d5e2;background:#f0fbff;color:#315361;border-radius:9px;font-size:12px}.notice.warn{border-color:#e4c784;background:#fff9ea;color:#6b5426}.notice.good{border-color:#add8bd;background:#f2fff6;color:#285c3b}.chip-row{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:10px;padding:5px 7px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}.section-heading{display:flex;justify-content:space-between;align-items:center;margin:25px 0 11px}.section-heading h2{margin:0;font-size:18px}.test-card{padding:17px}.test-card h3{margin:8px 0 7px;font-size:16px}.test-card p{min-height:40px;font-size:12px;color:var(--muted);line-height:1.5}.test-actions{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}.eyebrow{font-size:10px;font-weight:850;color:var(--blue);text-transform:uppercase;letter-spacing:1px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:11px;font-weight:800;color:var(--muted)}.input,.field input,.field select,.field textarea{width:100%;border:1px solid #aab5c5;background:var(--surface);color:var(--ink);border-radius:7px;padding:9px}.field textarea{min-height:90px;resize:vertical}.check-grid{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar .input{max-width:260px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th,.table td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.table th{background:var(--surface2);color:var(--muted);position:sticky;top:0}.table tr:last-child td{border-bottom:0}.empty{padding:25px;text-align:center;color:var(--muted);font-size:13px}.json-preview{width:100%;min-height:230px;background:#0d1628;color:#dbe7ff;border:0;border-radius:9px;padding:12px;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}.status{font-size:12px;color:var(--muted)}.spinner{display:inline-block;width:12px;height:12px;border:2px solid #9ab8df;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+/* TCS-style exam */.cbt{height:100vh;min-height:650px;display:flex;flex-direction:column;background:#fff;color:#222;font-family:Arial,Helvetica,sans-serif}.cbt-head{height:58px;background:linear-gradient(#129dcc,#047ead);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px}.exam-title{display:flex;align-items:center;gap:11px}.exam-seal{width:40px;height:40px;border:2px solid #fff;border-radius:50%;display:grid;place-items:center;font-weight:bold}.exam-title b{font-size:16px}.exam-title small{display:block;color:#daf3fc;margin-top:2px}.clock{display:flex;align-items:center;gap:8px;font-size:13px}.clock strong{background:#fff;color:#222;padding:8px 12px;min-width:84px;text-align:center;font-size:17px;font-variant-numeric:tabular-nums}.section-tabs{height:44px;border-bottom:1px solid #acbcc3;display:flex;align-items:end;padding-left:14px;gap:3px;overflow:auto;background:#fff}.section-tab{height:34px;border:1px solid #91a8b2;border-bottom:0;background:#e7eef1;color:#174b63;padding:0 20px;white-space:nowrap;font-size:13px}.section-tab.active{background:#078fbd;color:#fff;border-color:#056f98;font-weight:bold}.workspace{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 318px}.question-pane{min-width:0;display:flex;flex-direction:column;border-right:1px solid #aebbc1}.q-meta{min-height:38px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 14px;border-bottom:1px solid #c7d1d6;background:#f4f6f7;font-size:12px}.q-meta b{font-size:14px}.q-content{flex:1;min-height:0;overflow:auto;padding:15px 18px}.passage{font-size:13px;line-height:1.55;padding:12px 14px;background:#f7f7f7;border:1px solid #d8d8d8;margin-bottom:17px;white-space:pre-line}.question-text{font-size:14px;font-weight:bold;line-height:1.5;margin-bottom:13px}.option{display:flex;gap:9px;align-items:flex-start;padding:8px 6px;font-size:13px;cursor:pointer}.option.selected{background:#eef8fc}.option input{margin-top:2px}.descriptive-answer{width:100%;min-height:280px;border:1px solid #9dacb4;padding:12px;font:14px/1.6 Georgia,serif;resize:vertical}.word-count{text-align:right;font-size:11px;color:#66737b;margin-top:5px}.exam-actions{min-height:57px;border-top:1px solid #c7d1d6;background:#f4f6f7;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:10px}.button-group{display:flex;gap:8px}.side{display:flex;flex-direction:column;min-height:0;background:#edf3f5}.candidate{height:88px;background:#fff;border-bottom:1px solid #c7d1d6;padding:10px 12px;display:flex;gap:11px;align-items:center}.avatar{width:57px;height:64px;border:1px solid #aeb9be;background:linear-gradient(#e7ecee,#c8d2d6);position:relative;overflow:hidden}.avatar:before{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#91a1a8;top:8px;left:16px}.avatar:after{content:"";position:absolute;width:46px;height:28px;border-radius:50% 50% 0 0;background:#91a1a8;bottom:0;left:5px}.candidate small{display:block;color:#65747d;margin-top:4px}.palette-head{background:#148fbd;color:#fff;padding:8px 11px;font-size:13px;font-weight:bold}.palette-body{padding:10px 12px;overflow:auto}.palette-body h4{margin:3px 0 10px;font-size:12px}.q-grid{display:grid;grid-template-columns:repeat(5,38px);gap:9px 12px;margin-bottom:15px}.qn{width:38px;height:34px;border:1px solid #9ba7ad;background:#d6d9db;font-size:12px;font-weight:bold;position:relative}.qn.current{outline:3px solid #f1a333;outline-offset:1px}.qn.notanswered{background:#d83b35;border-color:#b72f2a;color:#fff;border-radius:2px 2px 12px 12px}.qn.answered{background:#35a34b;border-color:#278538;color:#fff;border-radius:12px 12px 2px 2px}.qn.marked,.qn.answeredmarked{background:#9744b4;border-color:#793196;color:#fff;border-radius:50%}.qn.answeredmarked:after{content:"✓";position:absolute;right:-4px;bottom:-5px;width:15px;height:15px;border-radius:50%;background:#2ca548;color:#fff;font-size:10px;line-height:15px}.legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 5px;background:#fff;border:1px solid #c7d2d7;padding:9px;font-size:10px}.legend-item{display:flex;align-items:center;gap:6px}.shape{width:24px;height:21px;display:grid;place-items:center;border:1px solid #9aa5aa;background:#d6d9db;font-size:10px;font-weight:bold}.shape.red{background:#d83b35;color:#fff;border-radius:2px 2px 9px 9px}.shape.green{background:#35a34b;color:#fff;border-radius:9px 9px 2px 2px}.shape.purple{background:#9744b4;color:#fff;border-radius:50%;position:relative}.shape.tick:after{content:"✓";position:absolute;right:-5px;bottom:-5px;width:13px;height:13px;border-radius:50%;background:#2ca548;color:#fff;font-size:9px;line-height:13px;text-align:center}.exam-foot{height:48px;background:#e8edef;border-top:1px solid #adb9bf;display:flex;align-items:center;justify-content:space-between;padding:0 13px}.cbt .btn{border-radius:0;background:#fff;color:#24363f}.cbt .btn.primary{background:#27a5da;color:#fff}.cbt .btn.purple{background:#7f409c;color:#fff}.cbt .btn.orange{background:#ee8a24;color:#fff}
+/* modal/results */.shade{position:fixed;inset:0;z-index:30;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px}.modal{width:min(780px,97vw);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid #6d7c83;box-shadow:var(--shadow)}.modal-head{background:var(--cyan);color:#fff;padding:11px 14px;display:flex;justify-content:space-between;font-weight:bold}.modal-body{padding:16px}.modal-actions{padding:12px 16px;border-top:1px solid var(--line);background:var(--surface2);display:flex;justify-content:flex-end;gap:8px}.instructions{font-size:12px;line-height:1.55}.results-head{border-bottom:3px solid var(--blue);padding-bottom:13px;display:flex;justify-content:space-between;align-items:end}.results-head h2{margin:0 0 4px}.score-big{font-size:26px;color:var(--blue)}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin:18px 0}.stat{border:1px solid var(--line);background:var(--surface);padding:13px;border-radius:10px}.stat small{display:block;color:var(--muted);margin-bottom:5px}.stat b{font-size:20px}.insights{border:1px solid #bcd3dd;background:#f5fbfd;color:#264353;padding:14px;border-radius:10px;margin-bottom:16px}.insight{font-size:13px;margin:7px 0}.feedback{width:100%;min-height:150px;border:1px solid #a9b8bf;background:var(--surface);color:var(--ink);padding:10px;resize:vertical}.progress{height:7px;background:#e4e9eb}.progress span{display:block;height:100%;background:var(--blue)}
+@media(max-width:980px){.app-shell{grid-template-columns:74px minmax(0,1fr)}.side-brand>div:last-child,.nav-label,.side-foot{display:none}.side-brand{justify-content:center}.nav-btn{justify-content:center}.hero{grid-template-columns:1fr}.grid-3,.metric-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.app-shell{display:block}.sidebar{position:fixed;z-index:20;bottom:0;top:auto;width:100%;height:58px;padding:5px;display:block}.side-brand,.side-foot{display:none}.nav{grid-template-columns:repeat(6,1fr)}.nav-btn{padding:8px 4px}.nav-label{display:none}.main-area{padding-bottom:58px}.content{padding:16px}.grid-2,.grid-3,.metric-grid,.form-grid{grid-template-columns:1fr}.workspace{grid-template-columns:1fr}.cbt{height:auto}.question-pane{min-height:650px}.q-grid{grid-template-columns:repeat(7,38px)}.stats{grid-template-columns:repeat(2,1fr)}.q-meta{align-items:flex-start;flex-direction:column}.exam-actions{align-items:stretch;flex-direction:column}.button-group{justify-content:space-between}.exam-foot{position:sticky;bottom:0}.top-actions .btn:not(.primary){display:none}}
+</style>
+</head>
+<body>
+<div id="app" class="loading-shell"><div class="loading-card"><strong>Prep Studio</strong><span>Loading your private exam workspace…</span></div></div>
+<noscript><div class="fatal">JavaScript is required to run this application.</div></noscript>
+<input id="question-import" type="file" accept="application/json,.json" hidden><input id="backup-import" type="file" accept="application/json,.json" hidden>
+<script>const MARKS_CORRECT = 1;
+const MARKS_WRONG = -0.25;
+
+function scoreAttempt(questions, answers = {}, grades = {}) {
+  let correct = 0, wrong = 0, skipped = 0, descriptiveSubmitted = 0, descriptivePending = 0, score = 0;
+  const rows = questions.map((question, index) => {
+    const selected = answers[index];
+    const isDescriptive = question.type === 'descriptive';
+    const blank = selected === undefined || selected === null || String(selected).trim() === '';
+    let status = 'Skipped';
+    let awardedMarks = 0;
+    if (isDescriptive) {
+      if (blank) skipped += 1;
+      else {
+        descriptiveSubmitted += 1;
+        const grade = grades[index];
+        if (grade && Number.isFinite(Number(grade.score))) {
+          awardedMarks = Math.max(0, Math.min(Number(question.marks || 0), Number(grade.score)));
+          score += awardedMarks;
+          status = 'Graded';
+        } else {
+          descriptivePending += 1;
+          status = 'Pending Review';
+        }
+      }
+    } else if (blank) skipped += 1;
+    else if (Number(selected) === Number(question.answer)) {
+      correct += 1;
+      awardedMarks = Number(question.marks ?? MARKS_CORRECT);
+      score += awardedMarks;
+      status = 'Correct';
+    } else {
+      wrong += 1;
+      awardedMarks = -Number(question.negativeMarks ?? Math.abs(MARKS_WRONG));
+      score += awardedMarks;
+      status = 'Wrong';
+    }
+    return { question, index, selected, status, awardedMarks, grade: grades[index] || null };
+  });
+  const objectiveAttempted = correct + wrong;
+  return {
+    correct, wrong, skipped, descriptiveSubmitted, descriptivePending,
+    attempted: objectiveAttempted + descriptiveSubmitted,
+    objectiveAttempted, total: questions.length,
+    maxScore: Number(questions.reduce((sum, question) => sum + Number(question.marks || 0), 0).toFixed(2)),
+    score: Number(score.toFixed(2)),
+    accuracy: objectiveAttempted ? Math.round((correct / objectiveAttempted) * 100) : 0,
+    rows,
+  };
+}
+
+function aggregate(rows, keyFn) {
+  const map = new Map();
+  rows.forEach((row) => {
+    const key = keyFn(row) || 'Uncategorized';
+    if (!map.has(key)) map.set(key, { name: key, total: 0, correct: 0, wrong: 0, skipped: 0, pending: 0, graded: 0, activeMs: 0, score: 0, maxScore: 0 });
+    const item = map.get(key);
+    item.total += 1;
+    if (row.status === 'Correct') item.correct += 1;
+    else if (row.status === 'Wrong') item.wrong += 1;
+    else if (row.status === 'Skipped') item.skipped += 1;
+    else if (row.status === 'Pending Review') item.pending += 1;
+    else if (row.status === 'Graded') item.graded += 1;
+    item.score += Number(row.awardedMarks || 0);
+    item.maxScore += Number(row.question.marks || 0);
+    item.activeMs += row.activeMs || 0;
+  });
+  return [...map.values()].map((item) => ({
+    ...item,
+    attempted: item.correct + item.wrong + item.pending + item.graded,
+    accuracy: item.correct + item.wrong ? Math.round((item.correct / (item.correct + item.wrong)) * 100) : 0,
+    averageSeconds: item.total ? Math.round(item.activeMs / item.total / 1000) : 0,
+  }));
+}
+
+function buildAnalytics({ questions, answers = {}, grades = {}, timeByQuestion = {}, visits = {}, answerChanges = {}, marked = {} }) {
+  const score = scoreAttempt(questions, answers, grades);
+  const rows = score.rows.map((row) => ({
+    ...row,
+    activeMs: timeByQuestion[row.index] || 0,
+    activeSeconds: Math.round((timeByQuestion[row.index] || 0) / 1000),
+    visits: visits[row.index] || 0,
+    answerChanges: answerChanges[row.index] || 0,
+    marked: Boolean(marked[row.index]),
+    wordCount: row.question.type === 'descriptive' ? String(row.selected || '').trim().split(/\s+/).filter(Boolean).length : 0,
+  }));
+  const totalActiveMs = rows.reduce((sum, row) => sum + row.activeMs, 0);
+  return {
+    ...score, rows, totalActiveMs, totalActiveSeconds: Math.round(totalActiveMs / 1000),
+    averageSeconds: rows.length ? Math.round(totalActiveMs / rows.length / 1000) : 0,
+    bySubject: aggregate(rows, (row) => row.question.subject), byTopic: aggregate(rows, (row) => row.question.topic),
+    slowest: [...rows].sort((a, b) => b.activeMs - a.activeMs).slice(0, Math.min(5, rows.length)),
+    totalVisits: rows.reduce((sum, row) => sum + row.visits, 0), totalAnswerChanges: rows.reduce((sum, row) => sum + row.answerChanges, 0),
+  };
+}
+
+function coachInsights(analytics) {
+  const insights = [];
+  if (analytics.objectiveAttempted) {
+    if (analytics.accuracy < 70) insights.push('Accuracy is the first constraint. Reduce speculative attempts and verify the final step before saving.');
+    else if (analytics.accuracy < 85) insights.push('Accuracy is workable but still leaks marks. Review each wrong answer before increasing speed.');
+    else insights.push('Objective accuracy is strong. The next gain should come from selection and execution speed.');
+  }
+  if (analytics.descriptivePending) insights.push(`${analytics.descriptivePending} descriptive response${analytics.descriptivePending === 1 ? '' : 's'} await AI or manual review.`);
+  const attemptRate = analytics.total ? analytics.attempted / analytics.total : 0;
+  if (attemptRate < 0.7) insights.push('Attempt rate was below 70%. Bank direct questions first and return to longer items later.');
+  if (analytics.totalAnswerChanges > Math.max(2, analytics.total * 0.2)) insights.push('Frequent answer changes may be costing time. Change an answer only when you can identify the original mistake.');
+  if (analytics.averageSeconds > 90) insights.push('Average active time exceeded 90 seconds per item. Use a first-visit cap for objective questions.');
+  const weak = analytics.byTopic.filter((topic) => topic.correct + topic.wrong >= 2).sort((a, b) => a.accuracy - b.accuracy)[0];
+  if (weak && weak.accuracy < 70) insights.push(`${weak.name} is the clearest objective weak area (${weak.accuracy}% accuracy).`);
+  const slow = analytics.slowest[0];
+  if (slow && slow.question.type !== 'descriptive' && slow.activeSeconds > Math.max(120, analytics.averageSeconds * 2)) insights.push(`Question ${slow.index + 1} consumed ${slow.activeSeconds}s; review why you stayed instead of moving on.`);
+  return insights.slice(0, 6);
+}
+
+function buildCoachPacket(attempt, analytics) {
+  return {
+    schemaVersion: 2, exam: attempt.title, completedAt: attempt.completedAt, isTestRun: Boolean(attempt.isTestRun),
+    summary: { score: analytics.score, maxScore: analytics.maxScore, total: analytics.total, correct: analytics.correct, wrong: analytics.wrong, skipped: analytics.skipped, descriptivePending: analytics.descriptivePending, accuracy: analytics.accuracy, elapsedSeconds: attempt.elapsedSeconds, activeQuestionSeconds: analytics.totalActiveSeconds, answerChanges: analytics.totalAnswerChanges },
+    subjectBreakdown: analytics.bySubject, topicBreakdown: analytics.byTopic,
+    responses: analytics.rows.map((row) => ({
+      number: row.index + 1, type: row.question.type || 'mcq', subject: row.question.subject, section: row.question.section, topic: row.question.topic,
+      question: row.question.question,
+      response: row.question.type === 'descriptive' ? (row.selected || null) : (row.selected === undefined || row.selected === null ? null : row.question.options[row.selected]),
+      correctOption: row.question.type === 'descriptive' ? null : row.question.options[row.question.answer],
+      modelAnswer: row.question.modelAnswer || '', rubric: row.question.rubric || [], wordLimit: row.question.wordLimit || 0,
+      status: row.status, awardedMarks: row.awardedMarks, maximumMarks: row.question.marks, activeSeconds: row.activeSeconds, visits: row.visits, answerChanges: row.answerChanges, markedForReview: row.marked, explanation: row.question.explanation || '',
+    })),
+  };
+}
+
+function buildGeminiPrompt(packet) {
+  return `You are my evidence-based bank-exam performance coach. Analyze this objective and/or descriptive attempt. For descriptive responses, score against the supplied maximum marks and rubric, then give line-level improvements and a better outline. For objective responses, diagnose accuracy, question selection, time management and avoidable negative marking. Return: (1) score adjustment for descriptive items, (2) three most important patterns, (3) a three-session plan with measurable targets, and (4) decision rules for my next test. Do not infer weakness from a test run.\n\nATTEMPT_PACKET\n${JSON.stringify(packet, null, 2)}`;
+}
+
+
+const parallelRows = `Fourteen persons sit in two parallel rows of seven with equal spacing. In row 1, A, B, C, D, E, F and G face north. In row 2, P, Q, R, S, T, U and V face south. Each person in row 1 faces a person in row 2. D sits third to the right of G. The one who faces G sits immediately left of S. Only one person sits between S and P, who sits third to the right of T. T sits second to the left of the one facing C. As many persons sit between C and D as between P and R, who sits immediately right of U. Only two persons sit between A and E. F sits somewhere to the right of E and is not at an end. Q sits immediately right of the one who faces F.`;
+
+const loanTable = `The table shows loan applications received by five branches and the percentage approved.\n\nBranch A: 120 applications, 75% approved\nBranch B: 150 applications, 80% approved\nBranch C: 180 applications, 70% approved\nBranch D: 210 applications, 60% approved\nBranch E: 240 applications, 90% approved`;
+
+const q = (id, subject, topic, question, options, answer, explanation, extra = {}) => ({
+  id, type: 'mcq', subject, section: subject, topic, question, options, answer, explanation,
+  marks: 1, negativeMarks: 0.25, difficulty: 'Prelims', source: 'Starter bank', ...extra,
+});
+
+const starterBank = [
+  q('R001','Reasoning Ability','Parallel Rows','How many persons sit to the right of B?',['Six','Five','Three','Four','No one'],4,'B occupies the extreme right position in the solved first row.',{passage:parallelRows,source:'User-supplied Guidely PDF'}),
+  q('R002','Reasoning Ability','Parallel Rows','Which pair sits at the extreme ends of the rows?',['P and D','U and B','S and E','T and G','Q and B'],4,'Q and B occupy corresponding extreme-end positions.',{passage:parallelRows,source:'User-supplied Guidely PDF'}),
+  q('R003','Reasoning Ability','Parallel Rows','Who sit second from the left end of their respective rows?',['R and A','S and D','U and F','C and U','F and T'],2,'U and F occupy the second positions from the left in their rows.',{passage:parallelRows,source:'User-supplied Guidely PDF'}),
+  q('R004','Reasoning Ability','Parallel Rows','Who sits third to the left of V?',['Q','The one immediately left of R','The one second to the right of Q','The one who faces C','No one'],1,'In the solved south-facing row, the required person is immediately left of R.',{passage:parallelRows,source:'User-supplied Guidely PDF'}),
+  q('R005','Reasoning Ability','Parallel Rows','Who faces the person sitting second to the left of G?',['V','U','S','Q','P'],3,'Q faces the person positioned second to the left of G.',{passage:parallelRows,source:'User-supplied Guidely PDF'}),
+  q('R006','Reasoning Ability','Syllogism','Statements: All pens are books. Some books are lamps. No lamp is a chair. Which conclusion definitely follows?',['Some pens are lamps','No pen is a chair','Some books are not chairs','All books are pens','Some chairs are books'],2,'The books that are lamps cannot be chairs, so some books are not chairs.'),
+  q('R007','Reasoning Ability','Inequality','If P ≥ Q > R = S < T, which relation is definitely true?',['P > S','Q = T','R > T','P < R','S > Q'],0,'P is at least Q, Q is greater than R, and R equals S; therefore P is greater than S.'),
+  q('R008','Reasoning Ability','Coding-Decoding','If BANK is coded as 2-1-14-11 using letter positions, how is LOAN coded?',['12-15-1-14','11-14-1-13','12-14-2-15','13-15-1-14','12-15-2-14'],0,'L=12, O=15, A=1 and N=14.'),
+  q('R009','Reasoning Ability','Blood Relations','A is the mother of B. C is the father of A. D is the brother of B. How is C related to D?',['Father','Maternal grandfather','Paternal grandfather','Uncle','Brother'],1,'C is the father of D’s mother, so C is D’s maternal grandfather.'),
+  q('R010','Reasoning Ability','Direction Sense','Riya walks 8 m north, turns right and walks 6 m, then turns right and walks 8 m. Where is she from the starting point?',['6 m east','6 m west','8 m north','8 m south','14 m east'],0,'The north and south movements cancel; she remains 6 m east of the start.'),
+  q('R011','Reasoning Ability','Order and Ranking','Arun is 8th from the top and 15th from the bottom in a class. How many students are there?',['21','22','23','24','20'],1,'Total = 8 + 15 − 1 = 22.'),
+  q('R012','Reasoning Ability','Series','Find the next term: A5, D9, G13, J17, ?',['L20','M21','M20','N21','L21'],1,'Letters advance by 3 and numbers by 4, giving M21.'),
+  q('R013','Reasoning Ability','Inequality','If A < B ≤ C = D > E, which relation is definitely true?',['A < D','B > D','E > C','A = E','B < E'],0,'A < B and B ≤ C = D, so A is definitely less than D.'),
+  q('R014','Reasoning Ability','Statement and Conclusion','Statement: Some officers are graduates. All graduates are readers. Which conclusion follows?',['All officers are readers','Some officers are readers','No reader is an officer','Some readers are not graduates','No conclusion follows'],1,'The officers who are graduates must also be readers.'),
+  q('R015','Reasoning Ability','Odd One Out','Choose the odd one out.',['ACE','BDF','CEG','DFH','EHK'],4,'The first four groups increase each letter by two positions; EHK does not.'),
+  q('R016','Reasoning Ability','Order and Ranking','In a queue of 35 people, Neha is 12th from the front. What is her position from the back?',['22nd','23rd','24th','25th','21st'],2,'Position from back = 35 − 12 + 1 = 24th.'),
+  q('R017','Reasoning Ability','Data Sufficiency','What is the value of x? I. x is an even number greater than 8 and less than 12. II. x is divisible by 5.',['I alone is sufficient','II alone is sufficient','Both together are required','Either alone is sufficient','Even together they are insufficient'],0,'Statement I uniquely gives x=10. Statement II alone does not.'),
+  q('R018','Reasoning Ability','Direction Sense','Aman faces west. He turns 90° clockwise, then 180° anticlockwise. Which direction does he face?',['North','South','East','West','North-east'],1,'West → clockwise to north → anticlockwise 180° to south.'),
+  q('R019','Reasoning Ability','Alphabet Test','How many English letters are between the 5th letter from the left and the 8th letter from the right?',['11','12','13','14','10'],2,'The letters are E (5th) and S (19th); positions 6 through 18 contain 13 letters.'),
+  q('R020','Reasoning Ability','Logical Sequence','Arrange in a logical order: 1. Interview 2. Application 3. Joining 4. Written exam 5. Selection',['2-4-1-5-3','4-2-1-5-3','2-1-4-5-3','2-4-5-1-3','4-1-2-5-3'],0,'A candidate applies, takes the written exam, attends the interview, is selected and then joins.'),
+
+  q('Q001','Quantitative Aptitude','Simplification','What is 48% of 750 minus 35% of 400?',['180','200','210','220','240'],3,'48% of 750 is 360 and 35% of 400 is 140; 360 − 140 = 220.'),
+  q('Q002','Quantitative Aptitude','Ratio','The ratio of A to B is 7:5. If their sum is 288, what is A?',['120','144','156','168','180'],3,'Twelve parts equal 288, so one part is 24 and A = 7 × 24 = 168.'),
+  q('Q003','Quantitative Aptitude','Simple Interest','Find the simple interest on ₹8,000 at 7.5% per annum for 2 years.',['₹900','₹1,000','₹1,100','₹1,200','₹1,400'],3,'SI = PRT/100 = 8000 × 7.5 × 2 / 100 = ₹1,200.'),
+  q('Q004','Quantitative Aptitude','Average','The average of five numbers is 42. If 54 is added as a sixth number, what is the new average?',['43','44','45','46','48'],1,'Original total = 210; new total = 264; 264/6 = 44.'),
+  q('Q005','Quantitative Aptitude','Time and Distance','A 180-metre train moving at 54 km/h crosses a pole in how many seconds?',['8','10','12','14','15'],2,'54 km/h = 15 m/s, so time = 180/15 = 12 seconds.'),
+  q('Q006','Quantitative Aptitude','Profit and Loss','An article is marked 25% above cost price and sold at a 10% discount on marked price. What is the profit percentage?',['10%','11.25%','12.5%','15%','17.5%'],2,'Selling price = 1.25 × 0.90 = 1.125 times cost price, giving 12.5% profit.'),
+  q('Q007','Quantitative Aptitude','Percentage','A number is increased by 20% and then decreased by 20%. What is the net change?',['No change','2% decrease','4% decrease','4% increase','8% decrease'],2,'1.20 × 0.80 = 0.96, so the final value is 4% lower.'),
+  q('Q008','Quantitative Aptitude','Compound Interest','What is the compound interest on ₹10,000 at 10% per annum for 2 years?',['₹2,000','₹2,100','₹2,200','₹1,900','₹2,400'],1,'Amount = 10000 × 1.1² = 12100, so compound interest is ₹2,100.'),
+  q('Q009','Quantitative Aptitude','Time and Work','A can complete a job in 12 days and B in 18 days. How long will they take together?',['6 days','7.2 days','7.5 days','8 days','9 days'],1,'Combined rate = 1/12 + 1/18 = 5/36, so time = 36/5 = 7.2 days.'),
+  q('Q010','Quantitative Aptitude','Mixture','In what ratio should water be mixed with milk costing ₹40 per litre so that the mixture costs ₹32 per litre?',['1:3','1:4','1:5','2:3','3:5'],1,'By alligation, water:milk = (40−32):(32−0) = 8:32 = 1:4.'),
+  q('Q011','Quantitative Aptitude','Boats and Streams','A boat travels at 12 km/h downstream and 8 km/h upstream. What is the speed of the stream?',['1 km/h','2 km/h','3 km/h','4 km/h','5 km/h'],1,'Stream speed = (12 − 8)/2 = 2 km/h.'),
+  q('Q012','Quantitative Aptitude','Ages','The present ages of A and B are in the ratio 4:5. After 8 years, the ratio will be 6:7. What is A’s present age?',['12','16','20','24','28'],1,'(4x+8)/(5x+8)=6/7 gives x=4, so A=16.'),
+  q('Q013','Quantitative Aptitude','Number Series','Find the next number: 3, 8, 18, 38, 78, ?',['148','154','156','158','160'],3,'Each term is the previous term ×2 +2; 78×2+2=158.'),
+  q('Q014','Quantitative Aptitude','Quadratic Equation','What is the larger root of x² − 9x + 20 = 0?',['3','4','5','6','8'],2,'The equation factors as (x−4)(x−5)=0; the larger root is 5.'),
+  q('Q015','Quantitative Aptitude','Data Interpretation','How many loan applications were received by all five branches together?',['850','880','900','920','950'],2,'120+150+180+210+240 = 900.',{passage:loanTable}),
+  q('Q016','Quantitative Aptitude','Data Interpretation','How many applications were approved by Branch C?',['108','120','126','132','144'],2,'70% of 180 = 126.',{passage:loanTable}),
+  q('Q017','Quantitative Aptitude','Data Interpretation','How many applications were approved by Branches A and B together?',['190','200','210','220','230'],2,'A approved 90 and B approved 120; total = 210.',{passage:loanTable}),
+  q('Q018','Quantitative Aptitude','Data Interpretation','What is the difference between approved applications in Branch E and Branch D?',['80','84','90','96','100'],2,'E approved 216 and D approved 126; difference = 90.',{passage:loanTable}),
+  q('Q019','Quantitative Aptitude','Data Interpretation','What is the ratio of approved applications in Branch A to Branch C?',['5:6','5:7','6:7','7:9','10:13'],1,'A:C = 90:126 = 5:7.',{passage:loanTable}),
+  q('Q020','Quantitative Aptitude','Probability','A fair die is rolled once. What is the probability of getting a number greater than 4?',['1/6','1/3','1/2','2/3','5/6'],1,'The favourable outcomes are 5 and 6, so probability = 2/6 = 1/3.'),
+
+  q('E001','English Language','Vocabulary','Choose the word closest in meaning to “prudent”.',['Careless','Cautious','Noisy','Immediate','Rigid'],1,'Prudent means careful and showing sound judgment.'),
+  q('E002','English Language','Error Detection','Choose the grammatically correct sentence.',['Neither of the reports are complete.','Neither of the reports is complete.','Neither of the report is complete.','Neither reports are complete.','Neither report were complete.'],1,'“Neither” takes a singular verb in this construction.'),
+  q('E003','English Language','Fill in the Blank','The regulator introduced safeguards to _____ the risk of digital fraud.',['aggravate','mitigate','imitate','allocate','circulate'],1,'Mitigate means reduce the severity or likelihood of a risk.'),
+  q('E004','English Language','Sentence Improvement','The branch manager, along with the clerks, were reviewing the applications. Choose the best correction.',['was reviewing','have reviewed','are reviewing','were reviewed','No correction'],0,'The subject is “manager”, so the singular verb “was” is required.'),
+  q('E005','English Language','Para Jumble','Arrange the sentences logically: A. The bank verified her documents. B. Mira submitted a loan application. C. The amount was credited after approval. D. The credit team assessed her eligibility.',['B-A-D-C','A-B-C-D','B-D-A-C','D-A-B-C','A-D-C-B'],0,'Application comes first, then document verification, eligibility assessment and credit after approval.'),
+
+  q('G001','General Awareness','Banking Awareness','In which year did the Reserve Bank of India begin operations?',['1930','1935','1947','1949','1951'],1,'The Reserve Bank of India commenced operations on 1 April 1935.'),
+  q('G002','General Awareness','Indian Polity','Which Article of the Constitution of India provides for the Finance Commission?',['Article 110','Article 280','Article 324','Article 356','Article 368'],1,'Article 280 provides for the constitution of the Finance Commission.'),
+  q('G003','General Awareness','International Institutions','Where is the headquarters of the International Monetary Fund?',['Geneva','New York','Washington, D.C.','Paris','Vienna'],2,'The IMF is headquartered in Washington, D.C.'),
+  q('G004','General Awareness','Economy','What does GDP stand for?',['Gross Domestic Product','General Development Plan','Gross Development Price','Government Debt Position','Global Domestic Production'],0,'GDP stands for Gross Domestic Product.'),
+  q('G005','General Awareness','Banking Awareness','NEFT in India is operated by which institution?',['SEBI','NABARD','Reserve Bank of India','NPCI only','Ministry of Finance'],2,'The NEFT payment system is owned and operated by the Reserve Bank of India.'),
+
+  q('D001','English Language','Descriptive Writing','Write an essay on “Digital financial inclusion: opportunities and risks for India” in about 250 words.',[],null,'',{type:'descriptive',difficulty:'Mains',marks:30,negativeMarks:0,wordLimit:250,modelAnswer:'A strong response should define digital financial inclusion, explain gains in reach, cost and transparency, examine cyber-fraud, literacy, privacy and exclusion risks, and conclude with practical safeguards.',rubric:['Clear structure and thesis','Relevant banking examples','Balanced analysis','Practical recommendations','Grammar, coherence and word-limit control']}),
+  q('D002','English Language','Letter Writing','Write a formal letter to a bank manager reporting repeated failure of a digital payment and requesting resolution and reversal within 200 words.',[],null,'',{type:'descriptive',difficulty:'Mains',marks:20,negativeMarks:0,wordLimit:200,modelAnswer:'The letter should include transaction references without exposing sensitive credentials, dates, amounts, the requested investigation and reversal, and a courteous request for written confirmation.',rubric:['Correct formal-letter format','Complete factual details','Clear requested remedy','Professional tone','Concise and error-free language']}),
+  q('D003','English Language','Precis Writing','Write a précis of the passage in roughly one-third of its length and add a suitable title.',[],null,'',{type:'descriptive',difficulty:'Mains',marks:20,negativeMarks:0,wordLimit:120,passage:'Banks increasingly use data to assess risk, personalize services and detect fraud. These tools can improve speed and access, but poorly governed systems may reproduce historical bias or make decisions that customers cannot understand. Responsible adoption therefore requires accurate data, human oversight, clear explanations, regular audits and accessible grievance channels. Innovation and accountability are not competing goals; trustworthy systems are more likely to earn lasting adoption.',modelAnswer:'Title: Responsible Data Use in Banking. Data-driven banking can improve access, speed and fraud control, but weak governance may create bias and opaque decisions. Accurate data, human oversight, explanations, audits and grievance systems are essential. Accountability strengthens rather than obstructs sustainable innovation.',rubric:['Captures every central idea','Uses original wording','Maintains logical flow','Provides an appropriate title','Respects the target length']}),
+];
+
+const SUBJECTS = ['Reasoning Ability', 'Quantitative Aptitude', 'English Language', 'General Awareness'];
+
+function normalizeImportedBank(payload) {
+  const source = Array.isArray(payload) ? payload : payload?.questions;
+  if (!Array.isArray(source)) throw new Error('Expected a JSON array or an object with a questions array.');
+  const ids = new Set();
+  return source.map((item, index) => {
+    const type = item.type === 'descriptive' ? 'descriptive' : 'mcq';
+    const question = String(item.question || '').trim();
+    const options = Array.isArray(item.options) ? item.options.map((option) => String(option).trim()).filter(Boolean) : [];
+    const answer = type === 'mcq' ? Number(item.answer) : null;
+    const id = String(item.id || `IMP-${Date.now()}-${index + 1}`);
+    if (!question) throw new Error(`Question ${index + 1} has no question text.`);
+    if (type === 'mcq' && (options.length < 2 || options.length > 6)) throw new Error(`Question ${index + 1} must have 2–6 options.`);
+    if (type === 'mcq' && (!Number.isInteger(answer) || answer < 0 || answer >= options.length)) throw new Error(`Question ${index + 1} has an invalid zero-based answer index.`);
+    if (ids.has(id)) throw new Error(`Duplicate question id: ${id}`);
+    ids.add(id);
+    const subject = String(item.subject || 'General Awareness').trim();
+    return {
+      id, type, subject, section: String(item.section || subject), topic: String(item.topic || 'Imported'), question,
+      options: type === 'mcq' ? options : [], answer,
+      explanation: String(item.explanation || ''), modelAnswer: String(item.modelAnswer || ''),
+      rubric: Array.isArray(item.rubric) ? item.rubric.map(String) : [], wordLimit: Math.max(0, Number(item.wordLimit) || 0),
+      passage: item.passage ? String(item.passage) : '', difficulty: String(item.difficulty || 'Prelims'),
+      marks: Math.max(0, Number(item.marks) || (type === 'mcq' ? 1 : 10)),
+      negativeMarks: Math.max(0, Number(item.negativeMarks) || (type === 'mcq' ? 0.25 : 0)),
+      source: String(item.source || 'Imported JSON'),
+    };
+  });
+}
+
+
+const KEYS = {
+  bank: 'po-prep-bank-v1',
+  attempts: 'po-prep-attempts-v1',
+  active: 'po-prep-active-v1',
+  settings: 'po-prep-settings-v1',
+  tests: 'po-prep-tests-v2',
+  aiConfig: 'po-prep-ai-config-v1',
+};
+
+const memoryFallback = new Map();
+
+function read(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw !== null) return JSON.parse(raw);
+  } catch { /* localStorage can be unavailable in sandboxed previews */ }
+  return memoryFallback.has(key) ? memoryFallback.get(key) : fallback;
+}
+
+function write(key, value) {
+  memoryFallback.set(key, value);
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* continue in memory */ }
+}
+
+function remove(key) {
+  memoryFallback.delete(key);
+  try { localStorage.removeItem(key); } catch { /* continue in memory */ }
+}
+
+function sanitizeConfig(config) {
+  if (!config) return null;
+  const { apiKey, key, token, authorization, ...safe } = config;
+  return safe;
+}
+
+const storage = {
+  loadBank: () => read(KEYS.bank, null),
+  saveBank: (bank) => write(KEYS.bank, bank),
+  loadAttempts: () => read(KEYS.attempts, []),
+  saveAttempts: (attempts) => write(KEYS.attempts, attempts),
+  clearAttempts: () => remove(KEYS.attempts),
+  loadActive: () => read(KEYS.active, null),
+  saveActive: (active) => write(KEYS.active, active),
+  clearActive: () => remove(KEYS.active),
+  loadSettings: () => read(KEYS.settings, { questionCount: 20, durationMinutes: 20 }),
+  saveSettings: (settings) => write(KEYS.settings, settings),
+  loadTests: () => read(KEYS.tests, []),
+  saveTests: (tests) => write(KEYS.tests, tests),
+  loadAIConfig: () => sanitizeConfig(read(KEYS.aiConfig, null)),
+  saveAIConfig: (config) => write(KEYS.aiConfig, sanitizeConfig(config)),
+  clearAll: () => Object.values(KEYS).forEach(remove),
+  exportAll: () => ({
+    schemaVersion: 2,
+    exportedAt: new Date().toISOString(),
+    bank: read(KEYS.bank, null),
+    attempts: read(KEYS.attempts, []),
+    tests: read(KEYS.tests, []),
+    settings: read(KEYS.settings, {}),
+    aiConfig: sanitizeConfig(read(KEYS.aiConfig, null)),
+  }),
+};
+
+
+const DEFAULTS = {
+  gemini: {
+    label: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    model: 'gemini-2.5-flash',
+  },
+  openai: {
+    label: 'OpenAI-compatible',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4.1-mini',
+  },
+};
+
+function providerDefaults(provider) {
+  return { ...(DEFAULTS[provider] || DEFAULTS.openai) };
+}
+
+function validateAIConfig(config) {
+  if (!['gemini', 'openai'].includes(config.provider)) throw new Error('Choose Gemini or OpenAI-compatible.');
+  const url = new URL(config.baseUrl);
+  if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') throw new Error('Use an HTTPS endpoint, or localhost for a trusted local model.');
+  if (!String(config.model || '').trim()) throw new Error('Enter a model name.');
+  return { ...config, baseUrl: config.baseUrl.replace(/\/+$/, ''), model: config.model.trim() };
+}
+
+function bytesToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(binary);
+}
+
+async function fileToAttachment(file) {
+  if (!file) return null;
+  if (file.size > 12 * 1024 * 1024) throw new Error('Choose a file smaller than 12 MB for direct browser upload.');
+  const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'text/plain');
+  if (mimeType.startsWith('text/') || file.name.match(/\.(md|csv|json)$/i)) {
+    return { name: file.name, mimeType, text: await file.text() };
+  }
+  return { name: file.name, mimeType, base64: bytesToBase64(await file.arrayBuffer()) };
+}
+
+function geminiEndpoint(config) {
+  return `${config.baseUrl}/models/${encodeURIComponent(config.model)}:generateContent`;
+}
+
+function openAIEndpoint(config) {
+  return config.baseUrl.endsWith('/chat/completions') ? config.baseUrl : `${config.baseUrl}/chat/completions`;
+}
+
+async function requestGemini(config, apiKey, prompt, attachment, signal) {
+  const parts = [{ text: prompt }];
+  if (attachment?.text) parts.push({ text: `\n\nATTACHED FILE: ${attachment.name}\n${attachment.text}` });
+  if (attachment?.base64) parts.push({ inlineData: { mimeType: attachment.mimeType, data: attachment.base64 } });
+  const response = await fetch(geminiEndpoint(config), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: config.temperature ?? 0.2 } }),
+    signal,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || `Gemini request failed (${response.status}).`);
+  const text = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('\n').trim();
+  if (!text) throw new Error('Gemini returned no text. Check the model name and safety settings.');
+  return text;
+}
+
+async function requestOpenAI(config, apiKey, prompt, attachment, signal) {
+  if (attachment?.base64 && attachment.mimeType === 'application/pdf') throw new Error('Direct PDF upload is not standardized for OpenAI-compatible endpoints. Use Gemini, or extract the PDF to text first.');
+  let content = prompt;
+  if (attachment?.text) content += `\n\nATTACHED FILE: ${attachment.name}\n${attachment.text}`;
+  if (attachment?.base64 && attachment.mimeType.startsWith('image/')) content = [
+    { type: 'text', text: prompt },
+    { type: 'image_url', image_url: { url: `data:${attachment.mimeType};base64,${attachment.base64}` } },
+  ];
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const response = await fetch(openAIEndpoint(config), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content }], temperature: config.temperature ?? 0.2 }),
+    signal,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || `Model request failed (${response.status}).`);
+  const text = payload?.choices?.[0]?.message?.content;
+  if (typeof text !== 'string' || !text.trim()) throw new Error('The endpoint returned no compatible text response.');
+  return text.trim();
+}
+
+async function callAI({ config, apiKey, prompt, attachment = null, timeoutMs = 90000 }) {
+  const safeConfig = validateAIConfig(config);
+  if (!apiKey && !(safeConfig.provider === 'openai' && safeConfig.authMode === 'none')) throw new Error('Enter an API key, or choose no authentication for a trusted local OpenAI-compatible endpoint.');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return safeConfig.provider === 'gemini'
+      ? await requestGemini(safeConfig, apiKey, prompt, attachment, controller.signal)
+      : await requestOpenAI(safeConfig, apiKey, prompt, attachment, controller.signal);
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('The model request timed out.');
+    if (error instanceof TypeError) throw new Error('The browser could not reach the endpoint. Check the URL, internet connection and the provider’s CORS policy.');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function parseJSONResponse(text) {
+  const cleaned = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  const start = Math.min(...['[', '{'].map((char) => {
+    const index = cleaned.indexOf(char);
+    return index < 0 ? Infinity : index;
+  }));
+  if (!Number.isFinite(start)) throw new Error('The model did not return JSON.');
+  const candidate = cleaned.slice(start);
+  try { return JSON.parse(candidate); } catch {
+    const objectEnd = candidate.lastIndexOf('}');
+    const arrayEnd = candidate.lastIndexOf(']');
+    const end = Math.max(objectEnd, arrayEnd);
+    if (end < 0) throw new Error('The model returned incomplete JSON.');
+    try { return JSON.parse(candidate.slice(0, end + 1)); }
+    catch { throw new Error('The model response could not be parsed as valid JSON. Ask it to return JSON only.'); }
+  }
+}
+
+function paperConversionPrompt({ defaultSubject = 'Reasoning Ability', instructions = '' } = {}) {
+  return `Convert the attached examination paper into a validated mock-test question bank. Return JSON only, with this exact shape:\n{"questions":[{"id":"unique-id","type":"mcq or descriptive","subject":"subject name","section":"section name","topic":"topic","difficulty":"Prelims or Mains","passage":"shared directions/data or empty","question":"question text","options":["A","B","C","D","E"],"answer":0,"marks":1,"negativeMarks":0.25,"explanation":"answer explanation","modelAnswer":"for descriptive questions","wordLimit":0,"rubric":["criterion"]}]}\n\nRules:\n- answer is a zero-based option index for MCQs.\n- descriptive questions use an empty options array and answer null.\n- Preserve shared puzzle directions and data tables in passage.\n- Do not invent missing answer keys. Omit ambiguous questions rather than guessing.\n- Default subject when unclear: ${defaultSubject}.\n- Preserve the paper's section structure.\n${instructions}`;
+}
+
+function generationPrompt({ subject, topic, difficulty, count, type }) {
+  return `Create ${count} original ${difficulty} ${subject} questions on ${topic}. Return JSON only using this schema: {"questions":[{"id":"unique-id","type":"${type}","subject":"${subject}","section":"${subject}","topic":"${topic}","difficulty":"${difficulty}","passage":"","question":"","options":[],"answer":0,"marks":1,"negativeMarks":0.25,"explanation":"","modelAnswer":"","wordLimit":0,"rubric":[]}]}. For MCQs provide five options, a zero-based answer index, a verified explanation and exactly one correct answer. For descriptive items use no options, answer null, a model answer, word limit and a concrete rubric. Avoid copyrighted wording and repeated templates.`;
+}
+
+
+
+
+
+
+const app = document.querySelector('#app');
+const questionImport = document.querySelector('#question-import');
+const backupImport = document.querySelector('#backup-import');
+const MAX_ATTEMPTS = 75;
+let bank = storage.loadBank() || starterBank;
+let attempts = migrateAttempts(storage.loadAttempts());
+let customTests = storage.loadTests();
+let settings = { defaultCount: 20, defaultMinutes: 20, shuffle: true, theme: 'light', ...storage.loadSettings() };
+let aiConfig = sanitizeAIConfig(storage.loadAIConfig() || { provider: 'gemini', ...providerDefaults('gemini'), temperature: 0.2, authMode: 'apiKey' });
+let sessionApiKey = '';
+let view = 'dashboard';
+let state = freshRuntime();
+let currentAttempt = null;
+let selectedQuestionIds = new Set();
+let aiDraftQuestions = [];
+let timer = null;
+let deferredInstallPrompt = null;
+
+function freshRuntime() {
+  return { screen:'dashboard', test:null, title:'', questions:[], current:0, answers:{}, grades:{}, marked:{}, seen:{}, visits:{}, answerChanges:{}, timeByQuestion:{}, enteredAt:0, tracking:false, events:[], startedAt:0, deadlineAt:0, durationSeconds:0, modalOpen:false };
+}
+function migrateAttempts(items) { return Array.isArray(items) ? items.filter(Boolean).map((item) => ({ isTestRun:false, aiNotes:'', grades:{}, ...item })) : []; }
+function sanitizeAIConfig(config={}) { const { apiKey, key, token, authorization, ...safe } = config || {}; return safe; }
+function escapeHTML(value) { return String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+function uid(prefix='id') { return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`; }
+function formatTime(seconds) { const safe=Math.max(0,Math.floor(Number(seconds)||0)); return `${String(Math.floor(safe/60)).padStart(2,'0')}:${String(safe%60).padStart(2,'0')}`; }
+function wordCount(text) { return String(text||'').trim().split(/\s+/).filter(Boolean).length; }
+function unique(values) { return [...new Set(values.filter(Boolean))]; }
+function randomize(items) { const copy=[...items]; if(!settings.shuffle) return copy; for(let i=copy.length-1;i>0;i-=1){const j=Math.floor((crypto.getRandomValues(new Uint32Array(1))[0]/4294967296)*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]];} return copy; }
+function saveCore() { storage.saveBank(bank); storage.saveAttempts(attempts); storage.saveTests(customTests); storage.saveSettings(settings); storage.saveAIConfig(aiConfig); }
+function downloadJSON(filename, value) { const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})); const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
+function showToast(message, tone='') { const old=document.querySelector('#toast');old?.remove();const el=document.createElement('div');el.id='toast';el.className=`notice ${tone}`;el.style.cssText='position:fixed;right:18px;bottom:18px;z-index:60;max-width:420px;box-shadow:var(--shadow)';el.textContent=message;document.body.append(el);setTimeout(()=>el.remove(),4000); }
+function statusClass(status) { return status==='Correct'||status==='Graded'?'ok':status==='Wrong'?'bad':status==='Pending Review'?'pending':'skip'; }
+
+const NAV=[['dashboard','D','Dashboard'],['tests','T','Tests'],['bank','Q','Question Bank'],['ai','AI','AI Studio'],['history','H','History'],['settings','S','Settings']];
+function shell(title, body) {
+  document.body.classList.toggle('dark',settings.theme==='dark');
+  app.innerHTML=`<div class="app-shell"><aside class="sidebar"><div class="side-brand"><div class="side-logo">PO</div><div>PREP STUDIO<small>Private exam lab</small></div></div><nav class="nav">${NAV.map(([id,icon,label])=>`<button class="nav-btn ${view===id?'active':''}" data-view="${id}"><span class="nav-icon">${icon}</span><span class="nav-label">${label}</span></button>`).join('')}</nav><div class="side-foot">Offline-first. Your bank, attempts and AI feedback stay in this browser unless you export them or call a model.</div></aside><section class="main-area"><header class="topbar"><h1>${escapeHTML(title)}</h1><div class="top-actions"><button class="btn" data-action="quick-backup">Export backup</button><button class="btn primary" data-view="tests">Start a test</button></div></header><main class="content">${body}</main></section></div>`;
+  bindShell();
+}
+function bindShell(){document.querySelectorAll('[data-view]').forEach((button)=>button.addEventListener('click',()=>navigate(button.dataset.view)));document.querySelector('[data-action="quick-backup"]')?.addEventListener('click',exportBackup);}
+function navigate(next){pauseTracking('navigate-app');view=next;renderView();}
+function renderView(){if(view==='dashboard')renderDashboard();else if(view==='tests')renderTests();else if(view==='bank')renderBank();else if(view==='ai')renderAIStudio();else if(view==='history')renderHistory();else renderSettings();}
+
+function builtInTests(){return[
+  {id:'builtin-reasoning',builtin:true,title:'Reasoning Speed Sectional',description:'Prelims-focused puzzle and standalone reasoning practice.',subjects:['Reasoning Ability'],types:['mcq'],count:Math.min(20,bank.filter(q=>q.subject==='Reasoning Ability').length),durationMinutes:20},
+  {id:'builtin-quant',builtin:true,title:'Quantitative Aptitude Sectional',description:'Arithmetic, DI, series and calculation control.',subjects:['Quantitative Aptitude'],types:['mcq'],count:Math.min(20,bank.filter(q=>q.subject==='Quantitative Aptitude').length),durationMinutes:20},
+  {id:'builtin-english',builtin:true,title:'English Language Practice',description:'Grammar, vocabulary and sequencing.',subjects:['English Language'],types:['mcq'],count:Math.min(20,bank.filter(q=>q.subject==='English Language'&&q.type==='mcq').length),durationMinutes:15},
+  {id:'builtin-ga',builtin:true,title:'General Awareness Practice',description:'Static banking, economy and institutional awareness.',subjects:['General Awareness'],types:['mcq'],count:Math.min(20,bank.filter(q=>q.subject==='General Awareness').length),durationMinutes:15},
+  {id:'builtin-mixed',builtin:true,title:'Mixed Objective Mock',description:'A multi-section test drawn from every objective subject.',subjects:[],types:['mcq'],count:Math.min(40,bank.filter(q=>q.type!=='descriptive').length),durationMinutes:40},
+  {id:'builtin-descriptive',builtin:true,title:'Descriptive Mains Practice',description:'Essay, letter and précis writing with AI/manual review.',subjects:['English Language'],types:['descriptive'],count:Math.min(3,bank.filter(q=>q.type==='descriptive').length),durationMinutes:30},
+];}
+function analyticsSummary(){const genuine=attempts.filter(a=>!a.isTestRun);const objective=genuine.reduce((sum,a)=>sum+(a.analytics?.objectiveAttempted||a.analytics?.attempted||0),0);const correct=genuine.reduce((sum,a)=>sum+(a.analytics?.correct||0),0);return{genuine,accuracy:objective?Math.round(correct/objective*100):0,active:genuine.reduce((sum,a)=>sum+(a.analytics?.totalActiveSeconds||0),0),pending:genuine.reduce((sum,a)=>sum+(a.analytics?.descriptivePending||0),0)};}
+function renderDashboard(){const summary=analyticsSummary();const recent=summary.genuine.slice(0,5);const active=storage.loadActive();const activeValid=active?.questions?.length&&active.deadlineAt>Date.now();shell('Dashboard',`<section class="hero"><div><h2>Your private exam-preparation operating system.</h2><p>Create any objective or descriptive test, practise in a TCS-style window, work offline, and use your preferred AI model only when you choose.</p></div><div class="hero-side"><span>Question bank</span><b>${bank.length}</b><small>${unique(bank.map(q=>q.subject)).length} subjects · ${bank.filter(q=>q.type==='descriptive').length} descriptive prompts</small></div></section>${activeValid?`<div class="notice warn" style="margin-top:15px"><b>Unfinished test:</b> ${escapeHTML(active.title)} · ${formatTime((active.deadlineAt-Date.now())/1000)} remaining <button class="btn small primary" data-action="resume-active">Resume</button> <button class="btn small" data-action="discard-active">Discard</button></div>`:''}<section class="metric-grid"><div class="metric"><small>Genuine attempts</small><b>${summary.genuine.length}</b></div><div class="metric"><small>Objective accuracy</small><b>${summary.accuracy}%</b></div><div class="metric"><small>Active practice</small><b>${formatTime(summary.active)}</b></div><div class="metric"><small>Descriptive pending</small><b>${summary.pending}</b></div></section><div class="section-heading"><h2>Quick start</h2><button class="btn" data-view="tests">All tests</button></div><section class="grid-3">${builtInTests().slice(0,3).map(testCard).join('')}</section><div class="section-heading"><h2>Recent attempts</h2><button class="btn" data-view="history">Full history</button></div>${recent.length?attemptTable(recent):'<div class="card empty">No genuine attempts yet. Complete a mock to establish your baseline.</div>'}`);bindTestCards();document.querySelector('[data-action="resume-active"]')?.addEventListener('click',()=>restoreActive(storage.loadActive()));document.querySelector('[data-action="discard-active"]')?.addEventListener('click',()=>{if(confirm('Discard the unfinished test?')){storage.clearActive();renderDashboard();}});}
+function testCard(test){const available=materializeTest(test).length;return`<article class="card test-card"><span class="eyebrow">${test.builtin?'Practice template':'Custom test'}</span><h3>${escapeHTML(test.title)}</h3><p>${escapeHTML(test.description||'Custom test configuration.')}</p><div class="chip-row"><span class="chip">${available} available</span><span class="chip">${test.durationMinutes} min</span><span class="chip">${test.types.join(' + ')}</span></div><div class="test-actions"><button class="btn primary" data-start-test="${test.id}" ${available?'':'disabled'}>Start</button>${!test.builtin?`<button class="btn danger" data-delete-test="${test.id}">Delete</button>`:''}</div></article>`;}
+function attemptTable(items){return`<div class="table-wrap"><table class="table"><thead><tr><th>Test</th><th>Score</th><th>Accuracy</th><th>Active time</th><th>Completed</th><th></th></tr></thead><tbody>${items.map(a=>`<tr><td><b>${escapeHTML(a.title)}</b>${a.isTestRun?'<br><span class="chip">UI test</span>':''}</td><td>${a.analytics?.score??0}/${a.analytics?.maxScore??a.analytics?.total??0}</td><td>${a.analytics?.accuracy??0}%</td><td>${formatTime(a.analytics?.totalActiveSeconds||0)}</td><td>${new Date(a.completedAt).toLocaleString()}</td><td><button class="btn small" data-open-attempt="${a.id}">Open</button></td></tr>`).join('')}</tbody></table></div>`;}
+function bindAttemptLinks(){document.querySelectorAll('[data-open-attempt]').forEach(b=>b.addEventListener('click',()=>openAttempt(b.dataset.openAttempt)));}
+
+function renderTests(){const all=[...builtInTests(),...customTests];const subjects=unique(bank.map(q=>q.subject));shell('Tests',`<div class="notice">Create tests from any subject and combine objective and descriptive sections. The exam engine calculates each question using its own marks and negative-mark value.</div><div class="section-heading"><h2>Available tests</h2></div><section class="grid-3">${all.map(testCard).join('')}</section><div class="section-heading"><h2>Create a custom test</h2></div><section class="card"><div class="card-body"><form id="test-form" class="form-grid"><div class="field"><label>Test name</label><input required name="title" placeholder="e.g. Mains mixed practice"></div><div class="field"><label>Duration in minutes</label><input required name="minutes" type="number" min="1" max="240" value="${settings.defaultMinutes}"></div><div class="field"><label>Question count</label><input required name="count" type="number" min="1" max="${bank.length}" value="${Math.min(settings.defaultCount,bank.length)}"></div><div class="field"><label>Question type</label><select name="type"><option value="mcq">Objective only</option><option value="descriptive">Descriptive only</option><option value="both">Objective and descriptive</option></select></div><div class="field full"><label>Subjects</label><div class="check-grid">${subjects.map((s,i)=>`<label><input type="checkbox" name="subject" value="${escapeHTML(s)}" ${i<2?'checked':''}> ${escapeHTML(s)}</label>`).join('')}</div></div><div class="field full"><label>Description</label><input name="description" placeholder="What this test is for"></div><div class="field full"><button class="btn primary" type="submit">Save custom test</button></div></form></div></section>`);bindTestCards();document.querySelector('#test-form').addEventListener('submit',saveCustomTest);}
+function saveCustomTest(event){event.preventDefault();const form=new FormData(event.currentTarget);const subjects=form.getAll('subject');if(!subjects.length)return showToast('Select at least one subject.','warn');const type=form.get('type');const test={id:uid('test'),title:String(form.get('title')).trim(),description:String(form.get('description')||''),subjects,types:type==='both'?['mcq','descriptive']:[type],count:Number(form.get('count')),durationMinutes:Number(form.get('minutes'))};customTests=[test,...customTests];storage.saveTests(customTests);showToast('Custom test saved.','good');renderTests();}
+function bindTestCards(){document.querySelectorAll('[data-start-test]').forEach(b=>b.addEventListener('click',()=>{const test=[...builtInTests(),...customTests].find(t=>t.id===b.dataset.startTest);if(test)startTest(test);}));document.querySelectorAll('[data-delete-test]').forEach(b=>b.addEventListener('click',()=>{if(confirm('Delete this custom test?')){customTests=customTests.filter(t=>t.id!==b.dataset.deleteTest);storage.saveTests(customTests);renderTests();}}));bindAttemptLinks();}
+function materializeTest(test){if(test.questionIds?.length){const map=new Map(bank.map(q=>[q.id,q]));return test.questionIds.map(id=>map.get(id)).filter(Boolean);}let pool=bank.filter(q=>(!test.subjects?.length||test.subjects.includes(q.subject))&&(!test.types?.length||test.types.includes(q.type||'mcq')));pool=randomize(pool);return pool.slice(0,Math.min(Number(test.count)||pool.length,pool.length));}
+
+function renderBank(){const subjects=unique(bank.map(q=>q.subject));shell('Question Bank',`<section class="card"><div class="card-head"><h2>${bank.length} questions</h2><div class="toolbar"><input class="input" id="bank-search" placeholder="Search question or topic"><select class="input" id="bank-subject"><option value="">All subjects</option>${subjects.map(s=>`<option>${escapeHTML(s)}</option>`).join('')}</select><select class="input" id="bank-type"><option value="">All types</option><option value="mcq">Objective</option><option value="descriptive">Descriptive</option></select></div></div><div class="card-body"><div class="toolbar" style="margin-bottom:12px"><button class="btn primary" data-action="new-question">Add question manually</button><button class="btn" data-action="import-bank">Import JSON</button><button class="btn" data-action="export-bank">Export bank</button><button class="btn" data-action="selected-test">Create test from selected</button><button class="btn danger" data-action="delete-selected">Delete selected</button></div><div id="bank-table"></div></div></section><section id="question-editor" class="card hidden" style="margin-top:16px"></section>`);renderBankTable();['bank-search','bank-subject','bank-type'].forEach(id=>document.querySelector(`#${id}`).addEventListener('input',renderBankTable));document.querySelector('[data-action="new-question"]').addEventListener('click',()=>showQuestionEditor());document.querySelector('[data-action="import-bank"]').addEventListener('click',()=>questionImport.click());document.querySelector('[data-action="export-bank"]').addEventListener('click',()=>downloadJSON('question-bank.json',{questions:bank}));document.querySelector('[data-action="selected-test"]').addEventListener('click',createTestFromSelected);document.querySelector('[data-action="delete-selected"]').addEventListener('click',deleteSelectedQuestions);}
+function filteredBank(){const query=(document.querySelector('#bank-search')?.value||'').toLowerCase();const subject=document.querySelector('#bank-subject')?.value||'';const type=document.querySelector('#bank-type')?.value||'';return bank.filter(q=>(!subject||q.subject===subject)&&(!type||(q.type||'mcq')===type)&&(!query||`${q.question} ${q.topic} ${q.subject}`.toLowerCase().includes(query)));}
+function renderBankTable(){const rows=filteredBank();const target=document.querySelector('#bank-table');if(!target)return;target.innerHTML=rows.length?`<div class="table-wrap" style="max-height:610px"><table class="table"><thead><tr><th></th><th>Question</th><th>Subject / section</th><th>Type</th><th>Marks</th><th></th></tr></thead><tbody>${rows.map(q=>`<tr><td><input type="checkbox" data-select-question="${q.id}" ${selectedQuestionIds.has(q.id)?'checked':''}></td><td><b>${escapeHTML(q.topic)}</b><br>${escapeHTML(q.question).slice(0,170)}</td><td>${escapeHTML(q.subject)}<br><span class="muted">${escapeHTML(q.section||q.subject)}</span></td><td>${q.type==='descriptive'?'Descriptive':'Objective'}</td><td>${q.marks??1}${q.type!=='descriptive'?` / −${q.negativeMarks??.25}`:''}</td><td><button class="btn small" data-edit-question="${q.id}">Edit</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No matching questions.</div>';target.querySelectorAll('[data-select-question]').forEach(c=>c.addEventListener('change',()=>{c.checked?selectedQuestionIds.add(c.dataset.selectQuestion):selectedQuestionIds.delete(c.dataset.selectQuestion);}));target.querySelectorAll('[data-edit-question]').forEach(b=>b.addEventListener('click',()=>showQuestionEditor(bank.find(q=>q.id===b.dataset.editQuestion))));}
+function showQuestionEditor(existing=null){const q=existing||{type:'mcq',subject:'Reasoning Ability',section:'Reasoning Ability',topic:'',question:'',options:['','','','',''],answer:0,marks:1,negativeMarks:.25,explanation:'',passage:'',difficulty:'Prelims',modelAnswer:'',wordLimit:0,rubric:[]};const editor=document.querySelector('#question-editor');editor.classList.remove('hidden');editor.innerHTML=`<div class="card-head"><h2>${existing?'Edit':'Add'} question</h2><button class="btn small" data-close-editor>Close</button></div><div class="card-body"><form id="question-form" class="form-grid"><input type="hidden" name="id" value="${escapeHTML(q.id||'')}"><div class="field"><label>Type</label><select name="type"><option value="mcq" ${q.type!=='descriptive'?'selected':''}>Objective (MCQ)</option><option value="descriptive" ${q.type==='descriptive'?'selected':''}>Descriptive</option></select></div><div class="field"><label>Subject</label><input required name="subject" value="${escapeHTML(q.subject)}"></div><div class="field"><label>Section</label><input name="section" value="${escapeHTML(q.section||q.subject)}"></div><div class="field"><label>Topic</label><input required name="topic" value="${escapeHTML(q.topic)}"></div><div class="field full"><label>Directions / passage</label><textarea name="passage">${escapeHTML(q.passage||'')}</textarea></div><div class="field full"><label>Question or writing prompt</label><textarea required name="question">${escapeHTML(q.question)}</textarea></div><div class="field full mcq-fields"><label>Options, one per line</label><textarea name="options">${escapeHTML((q.options||[]).join('\n'))}</textarea></div><div class="field mcq-fields"><label>Correct answer (A, B, C… or zero-based index)</label><input name="answer" value="${q.answer===null?'':String.fromCharCode(65+Number(q.answer||0))}"></div><div class="field"><label>Marks</label><input name="marks" type="number" min="0" step="0.25" value="${q.marks??1}"></div><div class="field mcq-fields"><label>Negative marks</label><input name="negativeMarks" type="number" min="0" step="0.01" value="${q.negativeMarks??.25}"></div><div class="field"><label>Difficulty</label><input name="difficulty" value="${escapeHTML(q.difficulty||'Prelims')}"></div><div class="field full mcq-fields"><label>Explanation</label><textarea name="explanation">${escapeHTML(q.explanation||'')}</textarea></div><div class="field full descriptive-fields"><label>Model answer / key points</label><textarea name="modelAnswer">${escapeHTML(q.modelAnswer||'')}</textarea></div><div class="field descriptive-fields"><label>Word limit</label><input name="wordLimit" type="number" min="0" value="${q.wordLimit||0}"></div><div class="field full descriptive-fields"><label>Rubric criteria, one per line</label><textarea name="rubric">${escapeHTML((q.rubric||[]).join('\n'))}</textarea></div><div class="field full"><button class="btn primary" type="submit">Save question</button></div></form></div>`;const toggle=()=>{const desc=editor.querySelector('[name="type"]').value==='descriptive';editor.querySelectorAll('.mcq-fields').forEach(el=>el.classList.toggle('hidden',desc));editor.querySelectorAll('.descriptive-fields').forEach(el=>el.classList.toggle('hidden',!desc));};toggle();editor.querySelector('[name="type"]').addEventListener('change',toggle);editor.querySelector('[data-close-editor]').addEventListener('click',()=>editor.classList.add('hidden'));editor.querySelector('#question-form').addEventListener('submit',saveManualQuestion);editor.scrollIntoView({behavior:'smooth'});}
+function saveManualQuestion(event){event.preventDefault();const f=new FormData(event.currentTarget);const type=f.get('type');const options=String(f.get('options')||'').split('\n').map(s=>s.trim()).filter(Boolean);let answer=null;if(type==='mcq'){const raw=String(f.get('answer')||'').trim().toUpperCase();answer=/^[A-F]$/.test(raw)?raw.charCodeAt(0)-65:Number(raw);if(options.length<2||!Number.isInteger(answer)||answer<0||answer>=options.length)return showToast('Objective questions need valid options and a correct answer.','warn');}const id=String(f.get('id')||'').trim()||uid('manual');const subject=String(f.get('subject')).trim();const item={id,type,subject,section:String(f.get('section')||subject).trim(),topic:String(f.get('topic')).trim(),passage:String(f.get('passage')||''),question:String(f.get('question')).trim(),options:type==='mcq'?options:[],answer,marks:Number(f.get('marks'))||0,negativeMarks:type==='mcq'?(Number(f.get('negativeMarks'))||0):0,difficulty:String(f.get('difficulty')||'Practice'),explanation:String(f.get('explanation')||''),modelAnswer:String(f.get('modelAnswer')||''),wordLimit:Number(f.get('wordLimit'))||0,rubric:String(f.get('rubric')||'').split('\n').map(s=>s.trim()).filter(Boolean),source:'Manual'};bank=[item,...bank.filter(q=>q.id!==id)];storage.saveBank(bank);showToast('Question saved.','good');renderBank();}
+function createTestFromSelected(){if(!selectedQuestionIds.size)return showToast('Select at least one question.','warn');const title=prompt('Name this test:','Selected question test');if(!title)return;customTests=[{id:uid('test'),title,description:'Created from selected questions.',questionIds:[...selectedQuestionIds],subjects:[],types:['mcq','descriptive'],count:selectedQuestionIds.size,durationMinutes:settings.defaultMinutes},...customTests];storage.saveTests(customTests);selectedQuestionIds.clear();showToast('Test created.','good');navigate('tests');}
+function deleteSelectedQuestions(){if(!selectedQuestionIds.size)return showToast('Select questions to delete.','warn');if(!confirm(`Delete ${selectedQuestionIds.size} selected questions?`))return;bank=bank.filter(q=>!selectedQuestionIds.has(q.id));selectedQuestionIds.clear();storage.saveBank(bank);renderBank();}
+
+function renderAIStudio(){const connected=Boolean(sessionApiKey)||(aiConfig.provider==='openai'&&aiConfig.authMode==='none');const provider=aiConfig.provider||'gemini';const defaults=providerDefaults(provider);shell('AI Studio',`<div class="notice warn"><b>Privacy:</b> API keys are kept only in memory for this browser tab and are never included in backups. Model requests send only the content you explicitly choose. Browser CORS rules may block some custom endpoints.</div><section class="grid-2" style="margin-top:16px"><article class="card"><div class="card-head"><h2>Model connection</h2><span class="chip">${connected?(sessionApiKey?'Key loaded for this session':'No-auth endpoint configured'):'Not connected'}</span></div><div class="card-body"><form id="ai-config" class="form-grid"><div class="field"><label>Provider</label><select name="provider"><option value="gemini" ${provider==='gemini'?'selected':''}>Google Gemini</option><option value="openai" ${provider==='openai'?'selected':''}>OpenAI-compatible</option></select></div><div class="field"><label>Model name</label><input required name="model" value="${escapeHTML(aiConfig.model||defaults.model)}"></div><div class="field full"><label>Base URL</label><input required name="baseUrl" value="${escapeHTML(aiConfig.baseUrl||defaults.baseUrl)}"></div><div class="field"><label>Authentication</label><select name="authMode"><option value="apiKey" ${aiConfig.authMode!=='none'?'selected':''}>API key / bearer token</option><option value="none" ${aiConfig.authMode==='none'?'selected':''}>None — trusted local endpoint</option></select></div><div class="field full"><label>API key (session only)</label><input name="apiKey" type="password" autocomplete="off" placeholder="Not saved to disk or backup"></div><div class="field"><label>Temperature</label><input name="temperature" type="number" min="0" max="2" step="0.1" value="${aiConfig.temperature??.2}"></div><div class="field" style="align-self:end"><button class="btn primary" type="submit">Save session connection</button></div></form><div class="toolbar" style="margin-top:10px"><button class="btn" data-action="test-ai">Test connection</button><button class="btn danger" data-action="forget-key">Forget session key</button><span id="ai-status" class="status"></span></div></div></article><article class="card"><div class="card-head"><h2>What the model can do</h2></div><div class="card-body"><div class="stack"><div><b>Convert papers</b><div class="muted">Upload PDF, image, text or JSON and stage validated questions.</div></div><div><b>Generate practice</b><div class="muted">Create original objective or descriptive questions in your chosen subject.</div></div><div><b>Analyse attempts</b><div class="muted">Review timing, selection, mistakes and descriptive writing.</div></div></div></div></article></section><section class="grid-2" style="margin-top:16px"><article class="card"><div class="card-head"><h2>Convert a question paper</h2></div><div class="card-body"><div class="form-grid"><div class="field"><label>Default subject</label><input id="convert-subject" value="Reasoning Ability"></div><div class="field"><label>Paper file</label><input id="paper-file" type="file" accept=".pdf,.txt,.md,.json,image/*"></div><div class="field full"><label>Special instructions</label><textarea id="convert-instructions" placeholder="e.g. Preserve the four puzzle caselets and omit answerless items"></textarea></div><div class="field full"><button class="btn primary" data-action="convert-paper">Convert with AI</button></div></div></div></article><article class="card"><div class="card-head"><h2>Generate questions</h2></div><div class="card-body"><div class="form-grid"><div class="field"><label>Subject</label><input id="gen-subject" value="Quantitative Aptitude"></div><div class="field"><label>Topic</label><input id="gen-topic" value="Data Interpretation"></div><div class="field"><label>Difficulty</label><select id="gen-difficulty"><option>Prelims</option><option>Mains</option><option>Foundation</option></select></div><div class="field"><label>Type</label><select id="gen-type"><option value="mcq">Objective</option><option value="descriptive">Descriptive</option></select></div><div class="field"><label>Count</label><input id="gen-count" type="number" min="1" max="30" value="5"></div><div class="field" style="align-self:end"><button class="btn primary" data-action="generate-questions">Generate with AI</button></div></div></div></article></section><section class="card" style="margin-top:16px"><div class="card-head"><h2>AI question staging area</h2><div><button class="btn small" data-action="clear-ai-draft">Clear</button> <button class="btn small primary" data-action="import-ai-draft" ${aiDraftQuestions.length?'':'disabled'}>Import ${aiDraftQuestions.length}</button></div></div><div class="card-body"><textarea id="ai-draft" class="json-preview" placeholder="Converted or generated JSON appears here…">${aiDraftQuestions.length?escapeHTML(JSON.stringify({questions:aiDraftQuestions},null,2)):''}</textarea><p id="draft-status" class="status"></p></div></section><section class="card" style="margin-top:16px"><div class="card-head"><h2>Analyse a completed attempt</h2></div><div class="card-body"><div class="toolbar"><select class="input" id="analysis-attempt"><option value="">Choose an attempt</option>${attempts.map(a=>`<option value="${a.id}">${escapeHTML(a.title)} — ${new Date(a.completedAt).toLocaleDateString()}</option>`).join('')}</select><button class="btn primary" data-action="analyse-attempt">Analyse with connected model</button><button class="btn purple" data-action="grade-descriptive">Grade descriptive responses</button></div><textarea id="analysis-output" class="feedback" style="margin-top:12px" placeholder="AI coaching output…"></textarea><div style="margin-top:8px"><button class="btn" data-action="save-analysis">Save output to attempt</button></div></div></section>`);bindAIStudio();}
+function readAIForm(){const form=new FormData(document.querySelector('#ai-config'));const provider=form.get('provider');const defaults=providerDefaults(provider);const config=validateAIConfig({provider,baseUrl:String(form.get('baseUrl')||defaults.baseUrl),model:String(form.get('model')||defaults.model),temperature:Number(form.get('temperature')||.2),authMode:String(form.get('authMode')||'apiKey')});const key=String(form.get('apiKey')||'').trim();if(key)sessionApiKey=key;aiConfig=config;storage.saveAIConfig(aiConfig);return config;}
+function aiBusy(button,status,message){button.disabled=true;button.dataset.original=button.textContent;button.innerHTML='<span class="spinner"></span> Working';status.textContent=message;return()=>{button.disabled=false;button.textContent=button.dataset.original;};}
+async function runAI(prompt,attachment,button,status){if(!sessionApiKey&&!(aiConfig.provider==='openai'&&aiConfig.authMode==='none'))throw new Error('Enter an API key and save the session connection first.');const done=aiBusy(button,status,'Contacting the model…');try{return await callAI({config:aiConfig,apiKey:sessionApiKey,prompt,attachment});}finally{done();}}
+function bindAIStudio(){const form=document.querySelector('#ai-config');form.querySelector('[name="provider"]').addEventListener('change',(e)=>{const d=providerDefaults(e.target.value);form.querySelector('[name="baseUrl"]').value=d.baseUrl;form.querySelector('[name="model"]').value=d.model;form.querySelector('[name="authMode"]').value='apiKey';});form.addEventListener('submit',(e)=>{e.preventDefault();try{readAIForm();showToast('Model configuration saved. The key will disappear when this tab closes.','good');renderAIStudio();}catch(error){showToast(error.message,'warn');}});document.querySelector('[data-action="forget-key"]').addEventListener('click',()=>{sessionApiKey='';showToast('Session API key forgotten.','good');renderAIStudio();});document.querySelector('[data-action="test-ai"]').addEventListener('click',async(e)=>{const status=document.querySelector('#ai-status');try{readAIForm();const text=await runAI('Reply with exactly: CONNECTED',null,e.currentTarget,status);status.textContent=`Connected: ${text.slice(0,80)}`;}catch(error){status.textContent=error.message;}});document.querySelector('[data-action="convert-paper"]').addEventListener('click',convertPaper);document.querySelector('[data-action="generate-questions"]').addEventListener('click',generateQuestions);document.querySelector('[data-action="clear-ai-draft"]').addEventListener('click',()=>{aiDraftQuestions=[];renderAIStudio();});document.querySelector('[data-action="import-ai-draft"]').addEventListener('click',importAIDraft);document.querySelector('#ai-draft').addEventListener('input',(e)=>{try{aiDraftQuestions=normalizeImportedBank(JSON.parse(e.target.value));document.querySelector('#draft-status').textContent=`Valid draft: ${aiDraftQuestions.length} questions.`;}catch(error){document.querySelector('#draft-status').textContent=error.message;}});document.querySelector('[data-action="analyse-attempt"]').addEventListener('click',analyseAttempt);document.querySelector('[data-action="grade-descriptive"]').addEventListener('click',gradeDescriptiveAttempt);document.querySelector('[data-action="save-analysis"]').addEventListener('click',saveAIAnalysis);}
+async function convertPaper(event){const status=document.querySelector('#draft-status');try{const file=document.querySelector('#paper-file').files[0];if(!file)throw new Error('Choose a paper file first.');const attachment=await fileToAttachment(file);const prompt=paperConversionPrompt({defaultSubject:document.querySelector('#convert-subject').value,instructions:document.querySelector('#convert-instructions').value});const text=await runAI(prompt,attachment,event.currentTarget,status);aiDraftQuestions=normalizeImportedBank(parseJSONResponse(text));document.querySelector('#ai-draft').value=JSON.stringify({questions:aiDraftQuestions},null,2);status.textContent=`Converted and validated ${aiDraftQuestions.length} questions. Review before importing.`;}catch(error){status.textContent=error.message;}}
+async function generateQuestions(event){const status=document.querySelector('#draft-status');try{const prompt=generationPrompt({subject:document.querySelector('#gen-subject').value,topic:document.querySelector('#gen-topic').value,difficulty:document.querySelector('#gen-difficulty').value,type:document.querySelector('#gen-type').value,count:Number(document.querySelector('#gen-count').value)});const text=await runAI(prompt,null,event.currentTarget,status);aiDraftQuestions=normalizeImportedBank(parseJSONResponse(text));document.querySelector('#ai-draft').value=JSON.stringify({questions:aiDraftQuestions},null,2);status.textContent=`Generated and validated ${aiDraftQuestions.length} questions. Review every answer before importing.`;}catch(error){status.textContent=error.message;}}
+function importAIDraft(){try{aiDraftQuestions=normalizeImportedBank(JSON.parse(document.querySelector('#ai-draft').value));const map=new Map(bank.map(q=>[q.id,q]));aiDraftQuestions.forEach(q=>map.set(q.id,q));bank=[...map.values()];storage.saveBank(bank);showToast(`Imported ${aiDraftQuestions.length} AI-staged questions. Verify their keys before serious practice.`,'good');aiDraftQuestions=[];renderAIStudio();}catch(error){showToast(error.message,'warn');}}
+async function analyseAttempt(event){const status=document.querySelector('#analysis-output');try{const attempt=attempts.find(a=>a.id===document.querySelector('#analysis-attempt').value);if(!attempt)throw new Error('Choose an attempt.');const text=await runAI(buildGeminiPrompt(buildCoachPacket(attempt,attempt.analytics)),null,event.currentTarget,status);status.value=text;status.dataset.attemptId=attempt.id;}catch(error){status.value=error.message;}}
+async function gradeDescriptiveAttempt(event){const output=document.querySelector('#analysis-output');try{const attempt=attempts.find(a=>a.id===document.querySelector('#analysis-attempt').value);if(!attempt)throw new Error('Choose an attempt.');if(!attempt.raw)throw new Error('This legacy attempt has no raw responses to grade.');const pending=attempt.analytics.rows.filter(row=>row.question.type==='descriptive'&&row.status==='Pending Review');if(!pending.length)throw new Error('This attempt has no ungraded descriptive responses.');const packet=buildCoachPacket(attempt,attempt.analytics);const prompt=`Grade only the descriptive responses in this attempt. Apply each supplied rubric and maximum mark. Return JSON only: {"grades":[{"number":1,"score":0,"feedback":"specific feedback"}],"overallFeedback":"concise summary"}. Never award more than maximumMarks.\n\n${JSON.stringify(packet)}`;const text=await runAI(prompt,null,event.currentTarget,output);const parsed=parseJSONResponse(text);if(!Array.isArray(parsed.grades))throw new Error('The model returned no grades array.');const grades={...(attempt.grades||{})};parsed.grades.forEach(item=>{const index=Number(item.number)-1;const row=attempt.analytics.rows[index];if(row?.question.type==='descriptive')grades[index]={score:Math.max(0,Math.min(Number(row.question.marks||0),Number(item.score)||0)),feedback:String(item.feedback||'')};});const analytics=buildAnalytics({...attempt.raw,grades});attempts=attempts.map(a=>a.id===attempt.id?{...a,grades,analytics,aiNotes:String(parsed.overallFeedback||a.aiNotes||'')}:a);storage.saveAttempts(attempts);output.value=`Descriptive grading saved. Updated score: ${analytics.score}/${analytics.maxScore}.\n\n${parsed.overallFeedback||''}`;output.dataset.attemptId=attempt.id;}catch(error){output.value=error.message;}}
+function saveAIAnalysis(){const output=document.querySelector('#analysis-output');const id=output.dataset.attemptId||document.querySelector('#analysis-attempt').value;if(!id)return showToast('Analyse or select an attempt first.','warn');attempts=attempts.map(a=>a.id===id?{...a,aiNotes:output.value}:a);storage.saveAttempts(attempts);showToast('AI analysis saved to history.','good');}
+
+function renderHistory(){const genuine=attempts.filter(a=>!a.isTestRun);const summary=analyticsSummary();shell('History',`<section class="metric-grid"><div class="metric"><small>Total attempts</small><b>${attempts.length}</b></div><div class="metric"><small>Genuine attempts</small><b>${genuine.length}</b></div><div class="metric"><small>Objective accuracy</small><b>${summary.accuracy}%</b></div><div class="metric"><small>Active practice</small><b>${formatTime(summary.active)}</b></div></section><section class="card"><div class="card-head"><h2>Attempt history</h2><div><button class="btn small" data-action="export-history">Export</button> <button class="btn small danger" data-action="clear-history">Delete all</button></div></div><div class="card-body">${attempts.length?attemptTable(attempts):'<div class="empty">No attempts saved.</div>'}</div></section>`);bindAttemptLinks();document.querySelector('[data-action="export-history"]').addEventListener('click',()=>downloadJSON('attempt-history.json',{attempts}));document.querySelector('[data-action="clear-history"]').addEventListener('click',()=>{if(confirm('Permanently delete all local attempt history?')){attempts=[];storage.clearAttempts();renderHistory();}});}
+function openAttempt(id){const attempt=attempts.find(a=>a.id===id);if(!attempt)return;currentAttempt=attempt;renderAttempt();}
+function renderAttempt(){const a=currentAttempt;const an=a.analytics;if(!an)return showToast('This legacy attempt has incomplete analytics.','warn');view='history';shell('Attempt Review',`<div class="results-head"><div><h2>${escapeHTML(a.title)}</h2><span class="muted">${new Date(a.completedAt).toLocaleString()} · elapsed ${formatTime(a.elapsedSeconds)} · active ${formatTime(an.totalActiveSeconds)}</span></div><div class="score-big"><b>${an.score}</b> / ${an.maxScore??an.total}</div></div><section class="stats"><div class="stat"><small>Correct</small><b class="ok">${an.correct}</b></div><div class="stat"><small>Wrong</small><b class="bad">${an.wrong}</b></div><div class="stat"><small>Skipped</small><b class="skip">${an.skipped}</b></div><div class="stat"><small>Accuracy</small><b>${an.accuracy}%</b></div><div class="stat"><small>Descriptive pending</small><b class="pending">${an.descriptivePending||0}</b></div></section><section class="insights"><b>Offline coaching</b>${coachInsights(an).map(x=>`<div class="insight">• ${escapeHTML(x)}</div>`).join('')}<div class="toolbar" style="margin-top:10px"><label><input id="attempt-test-run" type="checkbox" ${a.isTestRun?'checked':''}> UI test</label><button class="btn primary" data-action="copy-coach">Copy AI coaching prompt</button><button class="btn" data-action="open-gemini">Open Gemini</button><button class="btn" data-action="download-attempt">Download packet</button></div><span id="attempt-status" class="status"></span></section><div class="table-wrap"><table class="table"><thead><tr><th>Q</th><th>Type</th><th>Topic</th><th>Status</th><th>Response / key</th><th>Time</th><th>Visits</th><th></th></tr></thead><tbody>${an.rows.map(row=>`<tr><td>${row.index+1}</td><td>${row.question.type||'mcq'}</td><td>${escapeHTML(row.question.topic)}</td><td class="${statusClass(row.status)}">${row.status}</td><td>${row.question.type==='descriptive'?`${wordCount(row.selected)} words`: `${row.selected===undefined?'—':String.fromCharCode(65+Number(row.selected))} / ${String.fromCharCode(65+Number(row.question.answer))}`}</td><td>${row.activeSeconds}s</td><td>${row.visits}</td><td>${row.question.type==='descriptive'&&row.status!=='Skipped'?`<button class="btn small" data-grade="${row.index}">Grade</button>`:''}</td></tr>`).join('')}</tbody></table></div><section class="card" style="margin-top:16px"><div class="card-head"><h2>Saved AI feedback</h2></div><div class="card-body"><textarea id="attempt-notes" class="feedback">${escapeHTML(a.aiNotes||'')}</textarea><button class="btn primary" data-action="save-attempt-notes" style="margin-top:8px">Save feedback</button></div></section><button class="btn" data-view="history" style="margin-top:15px">Back to History</button>`);bindAttemptView();}
+function bindAttemptView(){document.querySelector('#attempt-test-run').addEventListener('change',(e)=>updateAttempt({isTestRun:e.target.checked}));document.querySelector('[data-action="copy-coach"]').addEventListener('click',()=>copyAttemptPrompt(false));document.querySelector('[data-action="open-gemini"]').addEventListener('click',()=>copyAttemptPrompt(true));document.querySelector('[data-action="download-attempt"]').addEventListener('click',()=>downloadJSON(`attempt-${currentAttempt.id}.json`,buildCoachPacket(currentAttempt,currentAttempt.analytics)));document.querySelector('[data-action="save-attempt-notes"]').addEventListener('click',()=>{updateAttempt({aiNotes:document.querySelector('#attempt-notes').value});showToast('Feedback saved.','good');});document.querySelectorAll('[data-grade]').forEach(b=>b.addEventListener('click',()=>showGradeModal(Number(b.dataset.grade))));}
+function updateAttempt(changes){Object.assign(currentAttempt,changes);attempts=attempts.map(a=>a.id===currentAttempt.id?currentAttempt:a);storage.saveAttempts(attempts);}
+async function copyAttemptPrompt(open=false){const status=document.querySelector('#attempt-status');if(currentAttempt.isTestRun){status.textContent='This attempt is marked as a UI test; no coaching prompt was created.';return;}try{await copyText(buildGeminiPrompt(buildCoachPacket(currentAttempt,currentAttempt.analytics)));status.textContent='Prompt copied. Paste it into your model.';if(open)window.open('https://gemini.google.com/app','_blank','noopener,noreferrer');}catch{status.textContent='Clipboard failed. Download the packet instead.';}}
+function showGradeModal(index){const row=currentAttempt.analytics.rows[index];openModal(`<div class="modal-head"><span>Grade descriptive response</span><button class="btn small" data-close>Close</button></div><div class="modal-body"><p><b>${escapeHTML(row.question.question)}</b></p><div class="notice">Maximum marks: ${row.question.marks}. Word count: ${wordCount(row.selected)}.</div><p style="white-space:pre-wrap">${escapeHTML(row.selected)}</p><div class="field"><label>Marks awarded</label><input id="grade-score" type="number" min="0" max="${row.question.marks}" step="0.5" value="${row.grade?.score||0}"></div><div class="field"><label>Feedback</label><textarea id="grade-feedback">${escapeHTML(row.grade?.feedback||'')}</textarea></div></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="save-grade">Save grade</button></div>`);document.querySelector('#save-grade').addEventListener('click',()=>{const grades={...(currentAttempt.grades||{}),[index]:{score:Number(document.querySelector('#grade-score').value),feedback:document.querySelector('#grade-feedback').value}};const raw=currentAttempt.raw;if(!raw)return showToast('Raw response data is unavailable for this legacy attempt.','warn');const analytics=buildAnalytics({...raw,grades});updateAttempt({grades,analytics});closeModal({resume:false});renderAttempt();});}
+
+function renderSettings(){shell('Settings',`<section class="grid-2"><article class="card"><div class="card-head"><h2>Practice defaults</h2></div><div class="card-body"><form id="settings-form" class="form-grid"><div class="field"><label>Default question count</label><input name="count" type="number" min="1" max="500" value="${settings.defaultCount}"></div><div class="field"><label>Default duration (minutes)</label><input name="minutes" type="number" min="1" max="300" value="${settings.defaultMinutes}"></div><div class="field"><label>Theme</label><select name="theme"><option value="light" ${settings.theme==='light'?'selected':''}>Light</option><option value="dark" ${settings.theme==='dark'?'selected':''}>Dark</option></select></div><label style="align-self:end"><input name="shuffle" type="checkbox" ${settings.shuffle?'checked':''}> Randomize questions</label><div class="field full"><button class="btn primary" type="submit">Save settings</button></div></form></div></article><article class="card"><div class="card-head"><h2>Install and use offline</h2></div><div class="card-body"><p class="muted">Use the install button when your browser offers it, or download standalone.html and open it directly. Installed browser apps behave like desktop software and keep local data.</p><div class="toolbar"><button class="btn primary" data-action="install-app" ${deferredInstallPrompt?'':'disabled'}>Install app</button><button class="btn" data-action="download-standalone-info">Windows instructions</button></div></div></article></section><section class="card" style="margin-top:16px"><div class="card-head"><h2>Data management</h2></div><div class="card-body"><div class="toolbar"><button class="btn primary" data-action="export-backup">Export complete backup</button><button class="btn" data-action="import-backup">Import backup</button><button class="btn danger" data-action="clear-history">Delete attempt history</button><button class="btn danger" data-action="reset-app">Reset entire app</button></div><p class="muted" style="font-size:12px">Backups include questions, test definitions, attempts, settings and saved AI feedback. API keys are never included.</p></div></section><section class="card" style="margin-top:16px"><div class="card-head"><h2>Storage and security</h2></div><div class="card-body"><ul class="instructions"><li>Browser-local data can be lost if browser storage is cleared. Export backups regularly.</li><li>API keys remain only in memory and disappear when the tab closes.</li><li>Keep the repository and backups private if they contain licensed question material.</li><li>Custom AI endpoints must support browser CORS. A future Windows wrapper can remove that browser limitation through a local secure bridge.</li></ul></div></section>`);bindSettings();}
+function bindSettings(){document.querySelector('#settings-form').addEventListener('submit',(e)=>{e.preventDefault();const f=new FormData(e.currentTarget);settings={...settings,defaultCount:Number(f.get('count')),defaultMinutes:Number(f.get('minutes')),theme:f.get('theme'),shuffle:f.get('shuffle')==='on'};storage.saveSettings(settings);showToast('Settings saved.','good');renderSettings();});document.querySelector('[data-action="install-app"]').addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;renderSettings();});document.querySelector('[data-action="download-standalone-info"]').addEventListener('click',()=>alert('Windows options:\n\n1. Download standalone.html and open it in Edge or Chrome.\n2. In the browser menu choose Apps > Install this site as an app when available.\n3. For a future signed .exe, this repository is structured for a lightweight Tauri wrapper.'));document.querySelector('[data-action="export-backup"]').addEventListener('click',exportBackup);document.querySelector('[data-action="import-backup"]').addEventListener('click',()=>backupImport.click());document.querySelector('[data-action="clear-history"]').addEventListener('click',()=>{if(confirm('Delete all attempt history?')){attempts=[];storage.clearAttempts();renderSettings();}});document.querySelector('[data-action="reset-app"]').addEventListener('click',()=>{if(confirm('Reset the question bank, tests, history, settings and model configuration?')){storage.clearAll();location.reload();}});}
+
+function startTest(test){const questions=materializeTest(test);if(!questions.length)return showToast('This test has no matching questions.','warn');storage.clearActive();state=freshRuntime();state.screen='exam';state.test=test;state.title=test.title;state.questions=questions;state.startedAt=Date.now();state.durationSeconds=Math.max(60,Number(test.durationMinutes||settings.defaultMinutes)*60);state.deadlineAt=state.startedAt+state.durationSeconds*1000;state.seen[0]=true;state.visits[0]=1;logEvent('start',{testId:test.id});persistActive();renderExam();startTimer();}
+function logEvent(type,data={}){state.events.push({type,atMs:Math.max(0,Date.now()-state.startedAt),questionIndex:state.current,...data});}
+function startTracking(){if(state.screen==='exam'&&!state.modalOpen&&!document.hidden&&!state.tracking){state.enteredAt=Date.now();state.tracking=true;}}
+function pauseTracking(reason='pause'){if(!state.tracking)return;const now=Date.now(),delta=Math.max(0,now-state.enteredAt);state.timeByQuestion[state.current]=(state.timeByQuestion[state.current]||0)+delta;state.tracking=false;logEvent('active-time',{reason,milliseconds:delta});persistActive();}
+function activeSnapshot(){const{screen,enteredAt,tracking,modalOpen,...safe}=state;return{...safe,savedAt:Date.now()};}
+function persistActive(){if(['exam','submitting'].includes(state.screen))storage.saveActive(activeSnapshot());}
+function restoreActive(saved){if(!saved?.questions?.length||saved.deadlineAt<=Date.now()){storage.clearActive();return false;}state={...freshRuntime(),...saved,screen:'exam',tracking:false,modalOpen:false};state.seen[state.current]=true;state.visits[state.current]=(state.visits[state.current]||0)+1;renderExam();startTimer();return true;}
+function startTimer(){clearInterval(timer);const tick=()=>{const left=Math.max(0,Math.ceil((state.deadlineAt-Date.now())/1000));document.querySelector('#timer')?.replaceChildren(document.createTextNode(formatTime(left)));if(left<=0&&state.screen==='exam')finishAttempt(true);};tick();timer=setInterval(tick,1000);}
+function examSections(){return unique(state.questions.map(q=>q.section||q.subject));}
+function sectionIndices(section){return state.questions.map((q,i)=>(q.section||q.subject)===section?i:-1).filter(i=>i>=0);}
+function qStatus(i){if(state.marked[i]&&hasAnswer(i))return'answeredmarked';if(state.marked[i])return'marked';if(hasAnswer(i))return'answered';if(state.seen[i])return'notanswered';return'notvisited';}
+function hasAnswer(i){const q=state.questions[i],value=state.answers[i];return q?.type==='descriptive'?Boolean(String(value||'').trim()):value!==undefined&&value!==null;}
+function statusCounts(indices){const c={notvisited:0,notanswered:0,answered:0,marked:0,answeredmarked:0};indices.forEach(i=>c[qStatus(i)]++);return c;}
+function renderExam(){const q=state.questions[state.current];if(!q)return navigate('dashboard');state.screen='exam';state.seen[state.current]=true;const section=q.section||q.subject,indices=sectionIndices(section),c=statusCounts(indices),left=Math.max(0,Math.ceil((state.deadlineAt-Date.now())/1000));const tabs=examSections().map(name=>`<button class="section-tab ${name===section?'active':''}" data-section="${escapeHTML(name)}">${escapeHTML(name)}</button>`).join('');const response=q.type==='descriptive'?`<textarea id="descriptive-response" class="descriptive-answer" placeholder="Write your response here…">${escapeHTML(state.answers[state.current]||'')}</textarea><div class="word-count"><span id="word-count">${wordCount(state.answers[state.current])}</span>${q.wordLimit?` / ${q.wordLimit}`:''} words</div>`:q.options.map((option,i)=>`<label class="option ${state.answers[state.current]===i?'selected':''}"><input type="radio" name="answer" value="${i}" ${state.answers[state.current]===i?'checked':''}><span><b>${String.fromCharCode(65+i)}.</b> ${escapeHTML(option)}</span></label>`).join('');const palette=indices.map(i=>`<button class="qn ${qStatus(i)} ${i===state.current?'current':''}" data-question="${i}">${i+1}</button>`).join('');app.innerHTML=`<main class="cbt"><header class="cbt-head"><div class="exam-title"><div class="exam-seal">PO</div><div><b>${escapeHTML(state.title)}</b><small>${q.type==='descriptive'?'Descriptive':'Objective'} exam · independent simulator</small></div></div><div class="clock"><span>Time Left</span><strong id="timer">${formatTime(left)}</strong></div></header><nav class="section-tabs">${tabs}</nav><div class="workspace"><section class="question-pane"><div class="q-meta"><b>Question No. ${state.current+1}</b><span>Marks: <b class="ok">${q.marks||0}</b>${q.type!=='descriptive'?` &nbsp; Negative: <b class="bad">${q.negativeMarks||0}</b>`:''}</span><span>${escapeHTML(q.subject)} · ${escapeHTML(q.topic)}</span></div><div class="q-content">${q.passage?`<div class="passage"><b>Directions / Data:</b>\n${escapeHTML(q.passage)}</div>`:''}<div class="question-text">${escapeHTML(q.question)}</div>${response}</div><div class="exam-actions"><div class="button-group"><button class="btn purple" data-action="mark-next">Mark for Review &amp; Next</button><button class="btn" data-action="clear-response">Clear Response</button></div><button class="btn primary" data-action="save-next">Save &amp; Next</button></div></section><aside class="side"><div class="candidate"><div class="avatar"></div><div><b>Candidate</b><small>Private practice session</small></div></div><div class="palette-head">Question Palette</div><div class="palette-body"><h4>${escapeHTML(section)}</h4><div class="q-grid">${palette}</div>${examLegend(c)}<p class="muted" style="font-size:10px">Orange outline shows the current item.</p></div></aside></div><footer class="exam-foot"><div class="button-group"><button class="btn small" data-action="question-paper">Question Paper</button><button class="btn small" data-action="instructions">Instructions</button></div><button class="btn orange" data-action="submit">Submit</button></footer></main>`;bindExam();startTracking();}
+function examLegend(c){return`<div class="legend"><div class="legend-item"><span class="shape">${c.notvisited}</span>Not Visited</div><div class="legend-item"><span class="shape red">${c.notanswered}</span>Not Answered</div><div class="legend-item"><span class="shape green">${c.answered}</span>Answered</div><div class="legend-item"><span class="shape purple">${c.marked}</span>Marked</div><div class="legend-item" style="grid-column:1/3"><span class="shape purple tick">${c.answeredmarked}</span>Answered &amp; Marked</div></div>`;}
+function moveTo(index){pauseTracking('navigate');state.current=Math.max(0,Math.min(state.questions.length-1,index));state.seen[state.current]=true;state.visits[state.current]=(state.visits[state.current]||0)+1;logEvent('visit-question');persistActive();renderExam();}
+function bindExam(){document.querySelectorAll('input[name="answer"]').forEach(r=>r.addEventListener('change',()=>{pauseTracking('answer');const next=Number(r.value),previous=state.answers[state.current];if(previous!==undefined&&previous!==next)state.answerChanges[state.current]=(state.answerChanges[state.current]||0)+1;state.answers[state.current]=next;logEvent('answer',{selected:next});persistActive();renderExam();}));const textarea=document.querySelector('#descriptive-response');if(textarea){textarea.addEventListener('input',()=>{state.answers[state.current]=textarea.value;document.querySelector('#word-count').textContent=wordCount(textarea.value);persistActive();});textarea.addEventListener('change',()=>logEvent('descriptive-save',{words:wordCount(textarea.value)}));}document.querySelectorAll('[data-question]').forEach(b=>b.addEventListener('click',()=>moveTo(Number(b.dataset.question))));document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>moveTo(sectionIndices(b.dataset.section)[0])));document.querySelector('[data-action="clear-response"]').addEventListener('click',()=>{pauseTracking('clear');if(hasAnswer(state.current))state.answerChanges[state.current]=(state.answerChanges[state.current]||0)+1;delete state.answers[state.current];persistActive();renderExam();});document.querySelector('[data-action="save-next"]').addEventListener('click',()=>moveTo(Math.min(state.questions.length-1,state.current+1)));document.querySelector('[data-action="mark-next"]').addEventListener('click',()=>{state.marked[state.current]=true;moveTo(Math.min(state.questions.length-1,state.current+1));});document.querySelector('[data-action="submit"]').addEventListener('click',showSubmit);document.querySelector('[data-action="instructions"]').addEventListener('click',showInstructions);document.querySelector('[data-action="question-paper"]').addEventListener('click',showQuestionPaper);}
+function openModal(content){pauseTracking('modal');state.modalOpen=true;const shade=document.createElement('div');shade.className='shade';shade.id='modal-shade';shade.innerHTML=`<section class="modal">${content}</section>`;document.body.append(shade);shade.addEventListener('click',e=>{if(e.target===shade)closeModal();});shade.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal()));}
+function closeModal({resume=true}={}){document.querySelector('#modal-shade')?.remove();state.modalOpen=false;if(resume&&state.screen==='exam')startTracking();}
+function showInstructions(){openModal(`<div class="modal-head"><span>Instructions</span><button class="btn small" data-close>Close</button></div><div class="modal-body instructions"><ol><li>The countdown runs continuously and auto-submits at zero.</li><li>Objective questions use their displayed marks and negative marks.</li><li>Descriptive responses are saved locally and require AI or manual grading.</li><li>Active time excludes instructions, question-paper and submit dialogs, and hidden browser tabs.</li><li>Save &amp; Next, Mark for Review &amp; Next and the palette preserve every response.</li></ol></div><div class="modal-actions"><button class="btn primary" data-close>Close</button></div>`);}
+function showQuestionPaper(){openModal(`<div class="modal-head"><span>Question Paper</span><button class="btn small" data-close>Close</button></div><div class="modal-body" style="max-height:65vh;overflow:auto">${state.questions.map((q,i)=>`<button class="nav-btn" style="width:100%;color:var(--ink)" data-paper="${i}"><b>Q${i+1}.</b> ${escapeHTML(q.question).slice(0,180)}</button>`).join('')}</div>`);document.querySelectorAll('[data-paper]').forEach(b=>b.addEventListener('click',()=>{closeModal({resume:false});moveTo(Number(b.dataset.paper));}));}
+function showSubmit(){const rows=examSections().map(section=>{const ids=sectionIndices(section),c=statusCounts(ids);return`<tr><td>${escapeHTML(section)}</td><td>${ids.length}</td><td>${c.answered+c.answeredmarked}</td><td>${c.notanswered}</td><td>${c.marked+c.answeredmarked}</td><td>${c.notvisited}</td></tr>`;}).join('');openModal(`<div class="modal-head"><span>Submit test</span><button class="btn small" data-close>Close</button></div><div class="modal-body"><p>Review your response status.</p><div class="table-wrap"><table class="table"><tr><th>Section</th><th>Total</th><th>Answered</th><th>Not answered</th><th>Marked</th><th>Not visited</th></tr>${rows}</table></div><p><b>Are you sure you want to submit?</b></p></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn orange" id="confirm-submit">Confirm Submit</button></div>`);document.querySelector('#confirm-submit').addEventListener('click',()=>finishAttempt(false));}
+function finishAttempt(autoSubmitted){if(state.screen!=='exam')return;pauseTracking('submit');state.screen='submitting';closeModal({resume:false});clearInterval(timer);const raw={questions:state.questions,answers:state.answers,timeByQuestion:state.timeByQuestion,visits:state.visits,answerChanges:state.answerChanges,marked:state.marked};const analytics=buildAnalytics({...raw,grades:{}});const attempt={id:uid('attempt'),title:state.title,testId:state.test?.id,completedAt:new Date().toISOString(),startedAt:new Date(state.startedAt).toISOString(),elapsedSeconds:Math.round((Date.now()-state.startedAt)/1000),autoSubmitted,isTestRun:false,raw,grades:{},analytics,aiNotes:''};attempts=[attempt,...attempts].slice(0,MAX_ATTEMPTS);storage.saveAttempts(attempts);storage.clearActive();currentAttempt=attempt;renderAttempt();}
+
+async function copyText(text){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);const a=document.createElement('textarea');a.value=text;a.style.cssText='position:fixed;opacity:0';document.body.append(a);a.select();document.execCommand('copy');a.remove();}
+function exportBackup(){downloadJSON(`prep-studio-backup-${new Date().toISOString().slice(0,10)}.json`,storage.exportAll());}
+async function readJSONFile(file){if(!file||file.size>20*1024*1024)throw new Error('Choose a JSON file smaller than 20 MB.');return JSON.parse(await file.text());}
+questionImport.addEventListener('change',async()=>{try{const imported=normalizeImportedBank(await readJSONFile(questionImport.files[0]));const map=new Map(bank.map(q=>[q.id,q]));imported.forEach(q=>map.set(q.id,q));bank=[...map.values()];storage.saveBank(bank);showToast(`Imported ${imported.length} questions. Bank total: ${bank.length}.`,'good');renderView();}catch(error){showToast(error.message,'warn');}questionImport.value='';});
+backupImport.addEventListener('change',async()=>{try{const backup=await readJSONFile(backupImport.files[0]);if(![1,2].includes(backup?.schemaVersion))throw new Error('Unsupported backup format.');if(!confirm('Replace local bank, tests, history and settings with this backup?'))return;bank=backup.bank?normalizeImportedBank(backup.bank):starterBank;attempts=migrateAttempts(backup.attempts||[]);customTests=backup.tests||[];settings={...settings,...(backup.settings||{})};aiConfig=sanitizeAIConfig(backup.aiConfig||aiConfig);saveCore();storage.clearActive();showToast('Backup restored.','good');renderView();}catch(error){showToast(error.message,'warn');}backupImport.value='';});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;});document.addEventListener('visibilitychange',()=>document.hidden?pauseTracking('tab-hidden'):startTracking());window.addEventListener('pagehide',()=>pauseTracking('pagehide'));window.addEventListener('beforeunload',()=>pauseTracking('beforeunload'));window.addEventListener('error',e=>{console.error(e.error||e.message);if(!app.children.length)app.innerHTML=`<div class="fatal"><b>The app encountered an error.</b><br>${escapeHTML(e.message)}<br>Your active test is stored locally.</div>`;});if('serviceWorker'in navigator&&location.protocol.startsWith('http')){try{navigator.serviceWorker.register('./sw.js').catch(()=>{});}catch{}}
+renderView();
+</script>
+</body></html>

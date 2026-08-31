@@ -1,0 +1,9 @@
+{
+  "name": "Prep Studio — Ultimate Exam Practice",
+  "short_name": "Prep Studio",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0789bb",
+  "description": "Private offline exam simulator, question bank, telemetry and optional AI coach"
+}

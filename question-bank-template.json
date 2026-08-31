@@ -1,0 +1,38 @@
+{
+  "questions": [
+    {
+      "id": "R-DEMO-001",
+      "type": "mcq",
+      "subject": "Reasoning Ability",
+      "section": "Reasoning Ability",
+      "topic": "Example topic",
+      "difficulty": "Prelims",
+      "passage": "Optional shared directions, puzzle clues or data table.",
+      "question": "Replace this with the question text.",
+      "options": ["Option A", "Option B", "Option C", "Option D", "Option E"],
+      "answer": 0,
+      "marks": 1,
+      "negativeMarks": 0.25,
+      "explanation": "Explain why option A is correct.",
+      "source": "Personal question bank"
+    },
+    {
+      "id": "D-DEMO-001",
+      "type": "descriptive",
+      "subject": "English Language",
+      "section": "Descriptive Writing",
+      "topic": "Essay",
+      "difficulty": "Mains",
+      "passage": "",
+      "question": "Write an essay on the assigned topic.",
+      "options": [],
+      "answer": null,
+      "marks": 30,
+      "negativeMarks": 0,
+      "modelAnswer": "Key ideas or a model response.",
+      "wordLimit": 250,
+      "rubric": ["Structure", "Relevance", "Analysis", "Language"],
+      "source": "Personal question bank"
+    }
+  ]
+}
