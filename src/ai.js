@@ -4,8 +4,13 @@ const DEFAULTS = {
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     model: 'gemini-2.5-flash',
   },
+  inception: {
+    label: 'Inception Labs Mercury',
+    baseUrl: 'https://api.inceptionlabs.ai/v1/chat/completions',
+    model: 'mercury-2',
+  },
   openai: {
-    label: 'OpenAI-compatible',
+    label: 'Other OpenAI-compatible',
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4.1-mini',
   },
@@ -16,7 +21,7 @@ export function providerDefaults(provider) {
 }
 
 export function validateAIConfig(config) {
-  if (!['gemini', 'openai'].includes(config.provider)) throw new Error('Choose Gemini or OpenAI-compatible.');
+  if (!['gemini', 'inception', 'openai'].includes(config.provider)) throw new Error('Choose Gemini, Inception Mercury or another OpenAI-compatible provider.');
   const url = new URL(config.baseUrl);
   if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') throw new Error('Use an HTTPS endpoint, or localhost for a trusted local model.');
   if (!String(config.model || '').trim()) throw new Error('Enter a model name.');
