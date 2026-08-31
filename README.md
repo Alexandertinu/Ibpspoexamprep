@@ -26,7 +26,7 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Genuine-attempt versus UI-test flagging
 - Deletable history and complete backup/restore
 
-### AI Studio
+### AI Tutor and Import & AI
 
 Supported connection modes:
 
@@ -36,10 +36,12 @@ Supported connection modes:
 
 Configure the provider, HTTPS base URL, model name and authentication mode in AI Studio. API keys are held only in memory for the current browser tab and are never written to storage, backups or the repository.
 
-AI Studio can:
+The dedicated **AI Tutor** is an exam-only teacher chat. It keeps recent conversation locally and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice.
+
+**Import & AI** can:
 
 - Test a model connection
-- Convert PDF, image, text, Markdown or JSON papers into staged question JSON
+- Convert PDF, image, text, Markdown or JSON papers, import the questions and automatically create a runnable test
 - Generate original objective or descriptive practice questions
 - Validate and review staged questions before importing them
 - Analyse completed attempts and timing
@@ -52,10 +54,11 @@ Browser security still applies. A custom endpoint must permit browser CORS. Gemi
 
 1. Download `standalone.html` from this private repository.
 2. Open it in a current version of Chrome, Edge or Firefox.
-3. Use **Tests** for a ready-made mock or create your own.
-4. Use **Question Bank** to add, edit, select, delete or import questions.
-5. Use **AI Studio** only when you want paper conversion, generation or deeper analysis.
-6. Export a full backup regularly.
+3. Use **Practice** for a ready-made mock or create your own.
+4. Use **Questions** to add, edit, select, delete or import questions.
+5. Use **AI Tutor** for explanations, faster techniques, time strategy and personalised guidance.
+6. Use **Import & AI** to convert a paper directly into a runnable test or generate new practice.
+7. Export a full backup regularly.
 
 The standalone file contains the full interface, starter bank and application logic. No installation, server or AI subscription is required for offline practice.
 

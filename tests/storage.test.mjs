@@ -15,3 +15,12 @@ test('AI credentials are stripped from saved configuration and backups', () => {
   assert.equal(storage.loadAIConfig().apiKey, undefined);
   assert.equal(storage.exportAll().aiConfig.token, undefined);
 });
+
+test('tutor conversation can be saved, exported and cleared', () => {
+  const messages = [{ role: 'user', content: 'Explain percentages' }];
+  storage.saveTutor(messages);
+  assert.deepEqual(storage.loadTutor(), messages);
+  assert.deepEqual(storage.exportAll().tutor, messages);
+  storage.clearTutor();
+  assert.deepEqual(storage.loadTutor(), []);
+});
