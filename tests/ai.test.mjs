@@ -10,8 +10,9 @@ test('AI config validates HTTPS endpoints and keeps custom model names', () => {
   assert.equal(validateAIConfig({ provider: 'openai', baseUrl: 'http://localhost:1234/v1', model: 'local', authMode: 'none' }).authMode, 'none');
 });
 
-test('provider defaults include Gemini, Inception Mercury and generic OpenAI-compatible profiles', () => {
+test('provider defaults include Gemini, Claude, Inception Mercury and generic OpenAI-compatible profiles', () => {
   assert.match(providerDefaults('gemini').baseUrl, /googleapis/);
+  assert.equal(providerDefaults('anthropic').baseUrl, 'https://api.anthropic.com/v1/messages');
   assert.equal(providerDefaults('inception').baseUrl, 'https://api.inceptionlabs.ai/v1/chat/completions');
   assert.equal(providerDefaults('inception').model, 'mercury-2');
   assert.match(providerDefaults('openai').baseUrl, /openai/);
@@ -37,6 +38,25 @@ test('Mercury preset sends an OpenAI-compatible bearer request and parses the re
     assert.equal(captured.options.headers.Authorization, 'Bearer test-key');
     assert.equal(captured.body.model, 'mercury-2');
     assert.equal(captured.body.messages[0].content, 'ping');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Claude preset uses Messages API headers and parses content blocks', async () => {
+  const originalFetch = globalThis.fetch;
+  let captured;
+  globalThis.fetch = async (url, options) => {
+    captured = { url, options, body: JSON.parse(options.body) };
+    return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: 'CLAUDE_CONNECTED' }] }) };
+  };
+  try {
+    const text = await callAI({ config: { provider: 'anthropic', ...providerDefaults('anthropic') }, apiKey: 'test-key', prompt: 'ping' });
+    assert.equal(text, 'CLAUDE_CONNECTED');
+    assert.equal(captured.url, 'https://api.anthropic.com/v1/messages');
+    assert.equal(captured.options.headers['x-api-key'], 'test-key');
+    assert.equal(captured.options.headers['anthropic-version'], '2023-06-01');
+    assert.equal(captured.body.messages[0].content[0].text, 'ping');
   } finally {
     globalThis.fetch = originalFetch;
   }
