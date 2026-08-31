@@ -7,9 +7,12 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 ### Universal test engine
 
 - Objective MCQ and descriptive writing questions
-- Any subject, topic or section name
+- User-created subject compartments and chapters/topics
+- Any subject, topic or section name, including JSON-imported subjects and chapters
 - Reasoning, Quantitative Aptitude, English, General Awareness and Descriptive starter content
-- Custom tests that combine subjects and question types
+- Custom tests that combine subjects, chapters and question types
+- Balanced chapter-by-chapter or fully random offline mock generation
+- AI Tutor mock creation from the local catalog when explicitly requested
 - Question-specific marks and negative marks
 - Configurable duration and question count
 - Auto-submit, resumable unfinished tests and standard question-palette states
@@ -35,10 +38,13 @@ Supported connection modes:
 - Inception Labs Mercury (`mercury-2`) preset
 - Other OpenAI-compatible chat-completions endpoints
 - Trusted local OpenAI-compatible endpoints without authentication
+- OpenAI-compatible services such as Groq, Mistral, NVIDIA NIM and OpenRouter when their endpoint supports browser CORS
 
-Configure the provider, HTTPS base URL, model name and authentication mode in AI Studio. API keys are held only in memory for the current browser tab and are never written to storage, backups or the repository.
+Save multiple provider profiles at the same time. Each profile can hold multiple discovered or manually entered model names, while its key remains only in session memory. The app can query standard model-list endpoints and populate model choices automatically; providers that do not expose model discovery still allow manual model entry.
 
-The dedicated **AI Tutor** is an exam-only teacher chat. It keeps recent conversation locally and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice.
+Configure the provider, HTTPS base URL, model name and authentication mode in Import & AI. API keys are held only in memory for the current browser tab and are never written to storage, backups or the repository.
+
+The dedicated **AI Tutor** is an exam-only teacher chat. It keeps recent conversation locally and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice. Provider and model selectors inside the chat let you switch among every configured free or paid model without leaving the conversation.
 
 **Import & AI** can:
 

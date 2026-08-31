@@ -1,4 +1,4 @@
-const CACHE = 'po-prep-v5';
+const CACHE = 'po-prep-v6';
 const ASSETS = ['./', './index.html', './styles.css', './src/app.js', './src/analytics.js', './src/questions.js', './src/storage.js', './src/ai.js', './manifest.webmanifest'];
 self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS))));
 self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))));

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { callAI, parseJSONResponse, providerDefaults, validateAIConfig } from '../src/ai.js';
+import { callAI, discoverModels, inferProvider, parseJSONResponse, providerDefaults, validateAIConfig } from '../src/ai.js';
 
 test('AI config validates HTTPS endpoints and keeps custom model names', () => {
   const config = validateAIConfig({ provider: 'openai', baseUrl: 'https://example.com/v1/', model: 'local-model' });
@@ -17,6 +17,24 @@ test('provider defaults include Gemini, Claude, Inception Mercury and generic Op
   assert.equal(providerDefaults('inception').model, 'mercury-2');
   assert.match(providerDefaults('openai').baseUrl, /openai/);
   assert.equal(validateAIConfig({ provider: 'inception', baseUrl: providerDefaults('inception').baseUrl, model: 'mercury-2' }).provider, 'inception');
+});
+
+test('provider inference recognizes known hosts and keeps unknown endpoints generic', () => {
+  assert.equal(inferProvider('https://api.inceptionlabs.ai/v1/chat/completions'), 'inception');
+  assert.equal(inferProvider('https://api.anthropic.com/v1/messages'), 'anthropic');
+  assert.equal(inferProvider('https://api.groq.com/openai/v1'), 'openai');
+});
+
+test('model discovery reads OpenAI-compatible model lists', async () => {
+  const originalFetch = globalThis.fetch;
+  let captured;
+  globalThis.fetch = async (url, options) => { captured={url,options}; return { ok:true, status:200, json:async()=>({data:[{id:'free-model-b'},{id:'free-model-a'}]}) }; };
+  try {
+    const models = await discoverModels({ config:{provider:'openai',baseUrl:'https://api.groq.com/openai/v1',model:'manual'}, apiKey:'test-key' });
+    assert.deepEqual(models, ['free-model-a','free-model-b']);
+    assert.equal(captured.url, 'https://api.groq.com/openai/v1/models');
+    assert.equal(captured.options.headers.Authorization, 'Bearer test-key');
+  } finally { globalThis.fetch=originalFetch; }
 });
 
 test('JSON parser accepts fenced model output', () => {

@@ -14,6 +14,9 @@ test('AI credentials are stripped from saved configuration and backups', () => {
   storage.saveAIConfig({ provider: 'openai', baseUrl: 'https://example.com/v1', model: 'x', apiKey: 'test', token: 'test2' });
   assert.equal(storage.loadAIConfig().apiKey, undefined);
   assert.equal(storage.exportAll().aiConfig.token, undefined);
+  storage.saveAIProfiles([{ id: 'p1', name: 'Free model', provider: 'openai', model: 'x', apiKey: 'test' }]);
+  assert.equal(storage.loadAIProfiles()[0].apiKey, undefined);
+  assert.equal(storage.exportAll().aiProfiles[0].apiKey, undefined);
 });
 
 test('tutor conversation can be saved, exported and cleared', () => {
