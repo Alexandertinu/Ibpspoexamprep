@@ -25,12 +25,50 @@ export function providerDefaults(provider) {
   return { ...(DEFAULTS[provider] || DEFAULTS.openai) };
 }
 
+export function inferProvider(baseUrl='') {
+  const host = (() => { try { return new URL(baseUrl).hostname; } catch { return ''; } })();
+  if (host.includes('generativelanguage.googleapis.com')) return 'gemini';
+  if (host.includes('anthropic.com')) return 'anthropic';
+  if (host.includes('inceptionlabs.ai')) return 'inception';
+  return 'openai';
+}
+
 export function validateAIConfig(config) {
   if (!['gemini', 'anthropic', 'inception', 'openai'].includes(config.provider)) throw new Error('Choose Gemini, Claude, Inception Mercury or another OpenAI-compatible provider.');
   const url = new URL(config.baseUrl);
   if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') throw new Error('Use an HTTPS endpoint, or localhost for a trusted local model.');
   if (!String(config.model || '').trim()) throw new Error('Enter a model name.');
   return { ...config, baseUrl: config.baseUrl.replace(/\/+$/, ''), model: config.model.trim() };
+}
+
+function modelsEndpoint(config) {
+  if (config.provider === 'gemini') return `${config.baseUrl.replace(/\/+$/, '')}/models`;
+  if (config.provider === 'anthropic') return config.baseUrl.replace(/\/v1\/messages$/, '/v1/models');
+  return config.baseUrl.replace(/\/chat\/completions$/, '').replace(/\/+$/, '') + '/models';
+}
+
+export async function discoverModels({ config, apiKey, timeoutMs = 30000 }) {
+  const safeConfig = validateAIConfig(config);
+  if (!apiKey && !(safeConfig.provider === 'openai' && safeConfig.authMode === 'none')) throw new Error('Enter a key before fetching models, or use no authentication for a trusted local endpoint.');
+  const headers = { Accept: 'application/json' };
+  if (safeConfig.provider === 'gemini') headers['x-goog-api-key'] = apiKey;
+  else if (safeConfig.provider === 'anthropic') { headers['x-api-key'] = apiKey; headers['anthropic-version'] = '2023-06-01'; headers['anthropic-dangerous-direct-browser-access'] = 'true'; }
+  else if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(modelsEndpoint(safeConfig), { headers, signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error?.message || `Model discovery failed (${response.status}). Enter a model manually if this provider does not expose /models.`);
+    const raw = safeConfig.provider === 'gemini' ? payload.models : payload.data;
+    const models = (Array.isArray(raw) ? raw : []).map((item) => String(item?.id || item?.name || '')).map((name) => name.replace(/^models\//, '')).filter(Boolean);
+    if (!models.length) throw new Error('The provider returned no model names. Enter the model manually.');
+    return [...new Set(models)].sort();
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('Model discovery timed out.');
+    if (error instanceof TypeError) throw new Error('The browser could not fetch models. Check the URL and the provider’s CORS policy.');
+    throw error;
+  } finally { clearTimeout(timeout); }
 }
 
 function bytesToBase64(buffer) {
