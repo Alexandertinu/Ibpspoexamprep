@@ -31,7 +31,8 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 Supported connection modes:
 
 - Google Gemini REST API
-- OpenAI-compatible chat-completions endpoints
+- Inception Labs Mercury (`mercury-2`) preset
+- Other OpenAI-compatible chat-completions endpoints
 - Trusted local OpenAI-compatible endpoints without authentication
 
 Configure the provider, HTTPS base URL, model name and authentication mode in AI Studio. API keys are held only in memory for the current browser tab and are never written to storage, backups or the repository.
