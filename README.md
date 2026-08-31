@@ -118,7 +118,7 @@ Imported questions merge by ID; an existing ID is replaced. Always verify AI-gen
 - `src/ai.js` — Gemini and OpenAI-compatible adapters
 - `src/storage.js` — offline persistence and backups
 - `tests/` — automated regression tests
-- `.github/workflows/ci.yml` — private CI verification; no public deployment
+- `ci-workflow.example.yml` — optional private CI template; copy it to `.github/workflows/ci.yml` when workflow-write permission is available
 
 ## Disclaimer
 
