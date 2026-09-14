@@ -242,6 +242,72 @@ function normalizeImage(image) {
   return { src, alt: String(image.alt || image.caption || 'Question diagram').trim(), caption: String(image.caption || '').trim() };
 }
 
+function isCourseFormat(payload) {
+  return payload?.questions && Array.isArray(payload.questions) && payload.questions.length > 0
+    && (payload.course_title || payload.day || payload.sections)
+    && payload.questions[0]?.options && typeof payload.questions[0].options === 'object' && !Array.isArray(payload.questions[0].options)
+    && typeof payload.questions[0].correct_answer === 'string';
+}
+
+function convertCourseFormat(payload) {
+  const sectionContexts = [];
+  if (Array.isArray(payload.sections)) {
+    payload.sections.forEach((section) => {
+      const range = String(section.question_range || '').match(/(\d+)\s*-\s*(\d+)/);
+      if (!range) return;
+      const ctx = { start: Number(range[1]), end: Number(range[2]), description: '', table: null };
+      if (section.context?.description) ctx.description = String(section.context.description);
+      if (Array.isArray(section.context?.table) && section.context.table.length > 0) {
+        const firstRow = section.context.table[0];
+        if (typeof firstRow === 'object' && !Array.isArray(firstRow)) {
+          const headers = Object.keys(firstRow);
+          ctx.table = { caption: section.section_name || '', headers, rows: section.context.table.map((row) => headers.map((key) => String(row[key] ?? ''))) };
+        }
+      }
+      if (Array.isArray(section.context?.notes) && section.context.notes.length > 0) {
+        ctx.description += (ctx.description ? '\n\n' : '') + section.context.notes.map(String).join('\n');
+      }
+      sectionContexts.push(ctx);
+    });
+  }
+
+  const subject = payload.course_title ? String(payload.course_title).replace(/\s*(bundle|pdf|course|day\s*\d+).*$/i, '').trim() : 'Quantitative Aptitude';
+  const title = payload.course_title ? `${subject} — Day ${payload.day || ''}`.replace(/\s+/g, ' ').trim() : 'Imported Mock Test';
+
+  const questions = payload.questions.map((item, index) => {
+    const qNum = Number(item.question_number || index + 1);
+    const optionsObj = item.options || {};
+    const optionKeys = Object.keys(optionsObj).sort();
+    const options = optionKeys.map((key) => String(optionsObj[key]).trim()).filter(Boolean);
+    const correctLetter = String(item.correct_answer || '').trim().toLowerCase();
+    const answerIndex = optionKeys.indexOf(correctLetter);
+    const questionType = String(item.type || '').trim();
+    const sectionCtx = sectionContexts.find((ctx) => qNum >= ctx.start && qNum <= ctx.end);
+    const passage = sectionCtx?.description || '';
+    const table = sectionCtx?.table || null;
+
+    return {
+      id: `${subject.replace(/\s+/g, '').slice(0, 3).toUpperCase()}-D${payload.day || '0'}-Q${String(qNum).padStart(3, '0')}`,
+      type: 'mcq',
+      subject: subject,
+      section: sectionCtx ? String(payload.sections?.find((s) => { const r = String(s.question_range || '').match(/(\d+)\s*-\s*(\d+)/); return r && qNum >= Number(r[1]) && qNum <= Number(r[2]); })?.section_name || subject) : subject,
+      topic: questionType || 'General',
+      difficulty: 'Prelims',
+      passage: passage,
+      question: String(item.question || '').trim(),
+      options,
+      answer: answerIndex >= 0 ? answerIndex : 0,
+      marks: 1,
+      negativeMarks: 0.25,
+      explanation: String(item.explanation || '').trim(),
+      source: payload.course_title || 'Imported course JSON',
+      ...(table ? { table } : {}),
+    };
+  });
+
+  return { title, description: `Day ${payload.day || ''} — ${payload.total_questions || questions.length} questions`, questions };
+}
+
 function normalizeImportedBank(payload) {
   const source = Array.isArray(payload) ? payload : payload?.questions;
   if (!Array.isArray(source)) throw new Error('Expected a JSON array or an object with a questions array.');
@@ -276,8 +342,11 @@ function normalizeImportedBank(payload) {
 }
 
 function normalizeImportedTest(payload) {
-  const source = payload?.test && typeof payload.test === 'object' ? payload.test : (payload?.title !== undefined ? payload : null);
-  if (!source) throw new Error('Expected a JSON object with a "test" wrapper or top-level test fields (title + questions).');
+  let source = payload?.test && typeof payload.test === 'object' ? payload.test : (payload?.title !== undefined ? payload : null);
+  if (!source && isCourseFormat(payload)) {
+    source = convertCourseFormat(payload);
+  }
+  if (!source) throw new Error('Expected a JSON object with a "test" wrapper, top-level test fields (title + questions), or a course format with sections and questions.');
   const title = String(source.title || source.name || '').trim();
   if (!title) throw new Error('The test needs a title.');
   const questions = normalizeImportedBank(source.questions || source.questionBank || []);
@@ -653,10 +722,10 @@ function testCard(test){const available=materializeTest(test).length;return`<art
 function attemptTable(items){return`<div class="table-wrap"><table class="table"><thead><tr><th>Test</th><th>Score</th><th>Accuracy</th><th>Active time</th><th>Completed</th><th></th></tr></thead><tbody>${items.map(a=>`<tr><td><b>${escapeHTML(a.title)}</b>${a.isTestRun?'<br><span class="chip">UI test</span>':''}</td><td>${a.analytics?.score??0}/${a.analytics?.maxScore??a.analytics?.total??0}</td><td>${a.analytics?.accuracy??0}%</td><td>${formatTime(a.analytics?.totalActiveSeconds||0)}</td><td>${new Date(a.completedAt).toLocaleString()}</td><td><button class="btn small" data-open-attempt="${a.id}">Open</button></td></tr>`).join('')}</tbody></table></div>`;}
 function bindAttemptLinks(){document.querySelectorAll('[data-open-attempt]').forEach(b=>b.addEventListener('click',()=>openAttempt(b.dataset.openAttempt)));}
 
-function renderTests(){const all=[...builtInTests(),...customTests];const catalog=questionCatalog();const subjects=catalog.map(item=>item.subject);const topics=unique(catalog.flatMap(item=>item.chapters)).sort();shell('Tests',`<div class="notice">Create tests from any subject and combine objective and descriptive sections. The exam engine calculates each question using its own marks and negative-mark value.</div><div class="section-heading"><h2>Available tests</h2></div><section class="grid-3">${all.map(testCard).join('')}</section><div class="section-heading"><h2>Import a mock test (JSON — no AI needed)</h2></div><section class="card"><div class="card-body"><p class="muted" style="margin-bottom:10px">Upload a JSON file with a title and questions array. Questions are merged into your bank and a runnable test is created instantly — no AI connection required. Supports tables and diagram images in questions. <a href="#" data-action="mock-template">Download the template</a> for the exact format.</p><div class="form-grid"><div class="field full"><input id="mock-import-file" type="file" accept="application/json,.json"></div><div class="field full"><button class="btn primary" data-action="import-mock">Import mock test</button></div></div><div id="mock-import-status" class="status"></div></div></section><div class="section-heading"><h2>Create a custom test</h2></div><section class="card"><div class="card-body"><form id="test-form" class="form-grid"><div class="field"><label>Test name</label><input required name="title" placeholder="e.g. Mains mixed practice"></div><div class="field"><label>Duration in minutes</label><input required name="minutes" type="number" min="1" max="240" value="${settings.defaultMinutes}"></div><div class="field"><label>Question count</label><input required name="count" type="number" min="1" max="${bank.length}" value="${Math.min(settings.defaultCount,bank.length)}"></div><div class="field"><label>Question type</label><select name="type"><option value="mcq">Objective only</option><option value="descriptive">Descriptive only</option><option value="both">Objective and descriptive</option></select></div><div class="field full"><label>Subjects</label><div class="check-grid">${subjects.map((s,i)=>`<label><input type="checkbox" name="subject" value="${escapeHTML(s)}" ${i<2?'checked':''}> ${escapeHTML(s)}</label>`).join('')}</div></div><div class="field full"><label>Chapters (optional; leave empty for all)</label><div class="check-grid" style="max-height:150px;overflow:auto">${topics.map(topic=>`<label><input type="checkbox" name="topic" value="${escapeHTML(topic)}"> ${escapeHTML(topic)}</label>`).join('')}</div></div><div class="field"><label>Selection method</label><select name="strategy"><option value="balanced">Balanced across chapters</option><option value="random">Fully random</option></select></div><div class="field full"><label>Description</label><input name="description" placeholder="What this test is for"></div><div class="field full"><button class="btn primary" type="submit">Save custom test</button></div></form></div></section>`);bindTestCards();document.querySelector('#test-form').addEventListener('submit',saveCustomTest);}
+function renderTests(){const all=[...builtInTests(),...customTests];const catalog=questionCatalog();const subjects=catalog.map(item=>item.subject);const topics=unique(catalog.flatMap(item=>item.chapters)).sort();shell('Tests',`<div class="notice">Create tests from any subject and combine objective and descriptive sections. The exam engine calculates each question using its own marks and negative-mark value.</div><div class="section-heading"><h2>Available tests</h2></div><section class="grid-3">${all.map(testCard).join('')}</section><div class="section-heading"><h2>Import a mock test (JSON — no AI needed)</h2></div><section class="card"><div class="card-body"><p class="muted" style="margin-bottom:10px">Upload a JSON file with a title and questions array. Questions are merged into your bank and a runnable test is created instantly — no AI connection required. Supports tables and diagram images in questions. <a href="#" data-action="mock-template">Download the template</a> for the exact format.</p><div class="form-grid"><div class="field"><label>Duration override (minutes, optional)</label><input id="mock-import-minutes" type="number" min="1" max="600" placeholder="Auto from question count"></div><div class="field full"><input id="mock-import-file" type="file" accept="application/json,.json"></div><div class="field full"><button class="btn primary" data-action="import-mock">Import mock test</button></div></div><div id="mock-import-status" class="status"></div></div></section><div class="section-heading"><h2>Create a custom test</h2></div><section class="card"><div class="card-body"><form id="test-form" class="form-grid"><div class="field"><label>Test name</label><input required name="title" placeholder="e.g. Mains mixed practice"></div><div class="field"><label>Duration in minutes</label><input required name="minutes" type="number" min="1" max="240" value="${settings.defaultMinutes}"></div><div class="field"><label>Question count</label><input required name="count" type="number" min="1" max="${bank.length}" value="${Math.min(settings.defaultCount,bank.length)}"></div><div class="field"><label>Question type</label><select name="type"><option value="mcq">Objective only</option><option value="descriptive">Descriptive only</option><option value="both">Objective and descriptive</option></select></div><div class="field full"><label>Subjects</label><div class="check-grid">${subjects.map((s,i)=>`<label><input type="checkbox" name="subject" value="${escapeHTML(s)}" ${i<2?'checked':''}> ${escapeHTML(s)}</label>`).join('')}</div></div><div class="field full"><label>Chapters (optional; leave empty for all)</label><div class="check-grid" style="max-height:150px;overflow:auto">${topics.map(topic=>`<label><input type="checkbox" name="topic" value="${escapeHTML(topic)}"> ${escapeHTML(topic)}</label>`).join('')}</div></div><div class="field"><label>Selection method</label><select name="strategy"><option value="balanced">Balanced across chapters</option><option value="random">Fully random</option></select></div><div class="field full"><label>Description</label><input name="description" placeholder="What this test is for"></div><div class="field full"><button class="btn primary" type="submit">Save custom test</button></div></form></div></section>`);bindTestCards();document.querySelector('#test-form').addEventListener('submit',saveCustomTest);}
 function saveCustomTest(event){event.preventDefault();const form=new FormData(event.currentTarget);const subjects=form.getAll('subject');if(!subjects.length)return showToast('Select at least one subject.','warn');const topics=form.getAll('topic');const type=form.get('type');const test={id:uid('test'),title:String(form.get('title')).trim(),description:String(form.get('description')||''),subjects,topics,selectionStrategy:String(form.get('strategy')||'balanced'),types:type==='both'?['mcq','descriptive']:[type],count:Number(form.get('count')),durationMinutes:Number(form.get('minutes'))};customTests=[test,...customTests];storage.saveTests(customTests);showToast('Custom test saved.','good');renderTests();}
 function bindTestCards(){document.querySelectorAll('[data-start-test]').forEach(b=>b.addEventListener('click',()=>{const test=[...builtInTests(),...customTests].find(t=>t.id===b.dataset.startTest);if(test)startTest(test);}));document.querySelectorAll('[data-delete-test]').forEach(b=>b.addEventListener('click',()=>{if(confirm('Delete this custom test?')){customTests=customTests.filter(t=>t.id!==b.dataset.deleteTest);storage.saveTests(customTests);renderTests();}}));bindAttemptLinks();document.querySelector('[data-action="import-mock"]')?.addEventListener('click',importMockTest);document.querySelector('[data-action="mock-template"]')?.addEventListener('click',downloadMockTemplate);}
-async function importMockTest(){const status=document.querySelector('#mock-import-status');try{const file=document.querySelector('#mock-import-file').files[0];if(!file)throw new Error('Choose a JSON mock test file first.');if(file.size>20*1024*1024)throw new Error('Choose a JSON file smaller than 20 MB.');const payload=JSON.parse(await file.text());const imported=normalizeImportedTest(payload);const map=new Map(bank.map(q=>[q.id,q]));imported.questions.forEach(q=>map.set(q.id,q));bank=[...map.values()];const questionIds=imported.questions.map(q=>q.id);const test={id:uid('test'),title:imported.title,description:imported.description||`Imported from ${file.name}.`,questionIds,subjects:unique(imported.questions.map(q=>q.subject)),types:unique(imported.questions.map(q=>q.type)),count:questionIds.length,durationMinutes:imported.durationMinutes,sourceFile:file.name,needsReview:false,shuffle:imported.shuffle};customTests=[test,...customTests];storage.saveBank(bank);storage.saveTests(customTests);status.textContent=`Imported "${test.title}" with ${questionIds.length} questions (${formatTime(test.durationMinutes*60)}). Opening Practice…`;showToast('Mock test imported and ready to start.','good');setTimeout(()=>navigate('tests'),900);}catch(error){status.textContent=error.message;showToast(error.message,'warn');}}
+async function importMockTest(){const status=document.querySelector('#mock-import-status');try{const file=document.querySelector('#mock-import-file').files[0];if(!file)throw new Error('Choose a JSON mock test file first.');if(file.size>20*1024*1024)throw new Error('Choose a JSON file smaller than 20 MB.');const payload=JSON.parse(await file.text());const imported=normalizeImportedTest(payload);const overrideMinutes=Number(document.querySelector('#mock-import-minutes')?.value)||0;if(overrideMinutes>0)imported.durationMinutes=Math.min(600,overrideMinutes);const map=new Map(bank.map(q=>[q.id,q]));imported.questions.forEach(q=>map.set(q.id,q));bank=[...map.values()];const questionIds=imported.questions.map(q=>q.id);const test={id:uid('test'),title:imported.title,description:imported.description||`Imported from ${file.name}.`,questionIds,subjects:unique(imported.questions.map(q=>q.subject)),types:unique(imported.questions.map(q=>q.type)),count:questionIds.length,durationMinutes:imported.durationMinutes,sourceFile:file.name,needsReview:false,shuffle:imported.shuffle};customTests=[test,...customTests];storage.saveBank(bank);storage.saveTests(customTests);status.textContent=`Imported "${test.title}" with ${questionIds.length} questions (${formatTime(test.durationMinutes*60)}). Opening Practice…`;showToast('Mock test imported and ready to start.','good');setTimeout(()=>navigate('tests'),900);}catch(error){status.textContent=error.message;showToast(error.message,'warn');}}
 function downloadMockTemplate(){downloadJSON('mock-test-template.json',{test:{title:'Sample Quant Mock — Data Interpretation',description:'Example mock test with tables. Replace questions with your own.',durationMinutes:20,shuffle:true,questions:[{id:'QT-DEMO-001',type:'mcq',subject:'Quantitative Aptitude',section:'Quantitative Aptitude',topic:'Data Interpretation',difficulty:'Prelims',passage:'Study the table and answer the question.',table:{caption:'Employees in five departments',headers:['Department','Total Employees','% Graduates'],rows:[['HR','120','60%'],['Sales','250','72%'],['IT','180','85%'],['Finance','90','80%'],['Operations','160','55%']]},question:'How many graduate employees work in IT?',options:['135','153','162','148','170'],answer:1,marks:1,negativeMarks:0.25,explanation:'85% of 180 = 153.',source:'Mock import template'},{id:'QT-DEMO-002',type:'mcq',subject:'Quantitative Aptitude',section:'Quantitative Aptitude',topic:'Data Interpretation',difficulty:'Prelims',passage:'Study the table and answer the question.',table:{caption:'Employees in five departments',headers:['Department','Total Employees','% Graduates'],rows:[['HR','120','60%'],['Sales','250','72%'],['IT','180','85%'],['Finance','90','80%'],['Operations','160','55%']]},question:'What is the total number of graduate employees across all departments?',options:['545','555','565','575','585'],answer:2,marks:1,negativeMarks:0.25,explanation:'HR 72 + Sales 180 + IT 153 + Finance 72 + Operations 88 = 565.',source:'Mock import template'}]}});}
 function materializeTest(test){if(test.questionIds?.length){const map=new Map(bank.map(q=>[q.id,q]));return test.questionIds.map(id=>map.get(id)).filter(Boolean);}let pool=bank.filter(q=>(!test.subjects?.length||test.subjects.includes(q.subject))&&(!test.topics?.length||test.topics.includes(q.topic))&&(!test.types?.length||test.types.includes(q.type||'mcq')));const count=Math.min(Number(test.count)||pool.length,pool.length);if(test.selectionStrategy!=='balanced')return randomize(pool).slice(0,count);const groups=[...new Map(pool.map(q=>[q.topic,[]])).entries()];pool.forEach(q=>groups.find(([topic])=>topic===q.topic)[1].push(q));groups.forEach(group=>{group[1]=randomize(group[1]);});const picked=[];let cursor=0;while(picked.length<count&&groups.some(group=>group[1].length)){const group=groups[cursor%groups.length];if(group[1].length)picked.push(group[1].shift());cursor+=1;}return picked;}
 

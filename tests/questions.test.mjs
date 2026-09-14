@@ -78,3 +78,49 @@ test('normalizeImportedTest respects shuffle flag', () => {
   const result = normalizeImportedTest({ title: 'No Shuffle', shuffle: false, questions: [{ question: 'Q1?', options: ['A', 'B'], answer: 0 }] });
   assert.equal(result.shuffle, false);
 });
+
+test('normalizeImportedTest accepts course format with letter-keyed options and sections', () => {
+  const payload = {
+    course_title: 'IBPS PO Prelims 2026 Quantitative Aptitude Bundle PDF Course',
+    day: 17,
+    total_questions: 3,
+    sections: [
+      {
+        section_name: 'Data Interpretation',
+        question_range: '1-2',
+        context: {
+          description: 'Study the table.',
+          table: [{ region: 'North', sales: '100' }, { region: 'South', sales: '200' }],
+          notes: ['All values in thousands.'],
+        },
+      },
+      { section_name: 'Simplification', question_range: '3-3' },
+    ],
+    questions: [
+      { question_number: 1, type: 'Data Interpretation', question: 'What is total sales?', options: { a: '200', b: '300', c: '400' }, correct_answer: 'b', explanation: 'Add them.' },
+      { question_number: 2, type: 'Data Interpretation', question: 'What is North sales?', options: { a: '50', b: '100', c: '150' }, correct_answer: 'b', explanation: 'From table.' },
+      { question_number: 3, type: 'Simplification', question: '2+2=?', options: { a: '3', b: '4', c: '5' }, correct_answer: 'b', explanation: 'Math.' },
+    ],
+  };
+  const result = normalizeImportedTest(payload);
+  assert.equal(result.title, 'IBPS PO Prelims 2026 Quantitative Aptitude — Day 17');
+  assert.equal(result.questions.length, 3);
+  // Q1 should have section context
+  assert.equal(result.questions[0].section, 'Data Interpretation');
+  assert.ok(result.questions[0].passage.includes('Study the table'));
+  assert.ok(result.questions[0].passage.includes('All values in thousands'));
+  assert.ok(result.questions[0].table);
+  assert.deepEqual(result.questions[0].table.headers, ['region', 'sales']);
+  assert.equal(result.questions[0].table.rows.length, 2);
+  // Q1 answer: 'b' → index 1 → '300'
+  assert.equal(result.questions[0].answer, 1);
+  assert.equal(result.questions[0].options[1], '300');
+  // Q3 should have no context
+  assert.equal(result.questions[2].passage, '');
+  assert.equal(result.questions[2].table, undefined);
+  assert.equal(result.questions[2].section, 'Simplification');
+});
+
+test('normalizeImportedTest rejects course format with no questions', () => {
+  assert.throws(() => normalizeImportedTest({ course_title: 'Test', day: 1, sections: [], questions: [] }), /course format|no valid questions/);
+});

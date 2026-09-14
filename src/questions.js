@@ -89,6 +89,72 @@ export function normalizeImage(image) {
   return { src, alt: String(image.alt || image.caption || 'Question diagram').trim(), caption: String(image.caption || '').trim() };
 }
 
+function isCourseFormat(payload) {
+  return payload?.questions && Array.isArray(payload.questions) && payload.questions.length > 0
+    && (payload.course_title || payload.day || payload.sections)
+    && payload.questions[0]?.options && typeof payload.questions[0].options === 'object' && !Array.isArray(payload.questions[0].options)
+    && typeof payload.questions[0].correct_answer === 'string';
+}
+
+function convertCourseFormat(payload) {
+  const sectionContexts = [];
+  if (Array.isArray(payload.sections)) {
+    payload.sections.forEach((section) => {
+      const range = String(section.question_range || '').match(/(\d+)\s*-\s*(\d+)/);
+      if (!range) return;
+      const ctx = { start: Number(range[1]), end: Number(range[2]), description: '', table: null };
+      if (section.context?.description) ctx.description = String(section.context.description);
+      if (Array.isArray(section.context?.table) && section.context.table.length > 0) {
+        const firstRow = section.context.table[0];
+        if (typeof firstRow === 'object' && !Array.isArray(firstRow)) {
+          const headers = Object.keys(firstRow);
+          ctx.table = { caption: section.section_name || '', headers, rows: section.context.table.map((row) => headers.map((key) => String(row[key] ?? ''))) };
+        }
+      }
+      if (Array.isArray(section.context?.notes) && section.context.notes.length > 0) {
+        ctx.description += (ctx.description ? '\n\n' : '') + section.context.notes.map(String).join('\n');
+      }
+      sectionContexts.push(ctx);
+    });
+  }
+
+  const subject = payload.course_title ? String(payload.course_title).replace(/\s*(bundle|pdf|course|day\s*\d+).*$/i, '').trim() : 'Quantitative Aptitude';
+  const title = payload.course_title ? `${subject} — Day ${payload.day || ''}`.replace(/\s+/g, ' ').trim() : 'Imported Mock Test';
+
+  const questions = payload.questions.map((item, index) => {
+    const qNum = Number(item.question_number || index + 1);
+    const optionsObj = item.options || {};
+    const optionKeys = Object.keys(optionsObj).sort();
+    const options = optionKeys.map((key) => String(optionsObj[key]).trim()).filter(Boolean);
+    const correctLetter = String(item.correct_answer || '').trim().toLowerCase();
+    const answerIndex = optionKeys.indexOf(correctLetter);
+    const questionType = String(item.type || '').trim();
+    const sectionCtx = sectionContexts.find((ctx) => qNum >= ctx.start && qNum <= ctx.end);
+    const passage = sectionCtx?.description || '';
+    const table = sectionCtx?.table || null;
+
+    return {
+      id: `${subject.replace(/\s+/g, '').slice(0, 3).toUpperCase()}-D${payload.day || '0'}-Q${String(qNum).padStart(3, '0')}`,
+      type: 'mcq',
+      subject: subject,
+      section: sectionCtx ? String(payload.sections?.find((s) => { const r = String(s.question_range || '').match(/(\d+)\s*-\s*(\d+)/); return r && qNum >= Number(r[1]) && qNum <= Number(r[2]); })?.section_name || subject) : subject,
+      topic: questionType || 'General',
+      difficulty: 'Prelims',
+      passage: passage,
+      question: String(item.question || '').trim(),
+      options,
+      answer: answerIndex >= 0 ? answerIndex : 0,
+      marks: 1,
+      negativeMarks: 0.25,
+      explanation: String(item.explanation || '').trim(),
+      source: payload.course_title || 'Imported course JSON',
+      ...(table ? { table } : {}),
+    };
+  });
+
+  return { title, description: `Day ${payload.day || ''} — ${payload.total_questions || questions.length} questions`, questions };
+}
+
 export function normalizeImportedBank(payload) {
   const source = Array.isArray(payload) ? payload : payload?.questions;
   if (!Array.isArray(source)) throw new Error('Expected a JSON array or an object with a questions array.');
@@ -123,8 +189,11 @@ export function normalizeImportedBank(payload) {
 }
 
 export function normalizeImportedTest(payload) {
-  const source = payload?.test && typeof payload.test === 'object' ? payload.test : (payload?.title !== undefined ? payload : null);
-  if (!source) throw new Error('Expected a JSON object with a "test" wrapper or top-level test fields (title + questions).');
+  let source = payload?.test && typeof payload.test === 'object' ? payload.test : (payload?.title !== undefined ? payload : null);
+  if (!source && isCourseFormat(payload)) {
+    source = convertCourseFormat(payload);
+  }
+  if (!source) throw new Error('Expected a JSON object with a "test" wrapper, top-level test fields (title + questions), or a course format with sections and questions.');
   const title = String(source.title || source.name || '').trim();
   if (!title) throw new Error('The test needs a title.');
   const questions = normalizeImportedBank(source.questions || source.questionBank || []);
