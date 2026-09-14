@@ -25,6 +25,8 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Objective scoring using each question's marks and negative marks
 - Descriptive responses held as Pending Review until manually or AI graded
 - Subject and topic breakdowns
+- Read-only exam-style answer review with submitted answers, correct keys, explanations and per-question time
+- Color-coded review palette for correct, incorrect, skipped and pending questions
 - Deterministic offline coaching that works without an AI connection
 - Genuine-attempt versus UI-test flagging
 - Deletable history and complete backup/restore
@@ -147,6 +149,7 @@ Imported questions merge by ID; an existing ID is replaced. Always verify AI-gen
 - `src/analytics.js` — objective/descriptive scoring and coaching packets
 - `src/ai.js` — configurable Chat Completions, Messages and Generate Content adapters
 - `src/markdown.js` — safe rich-text and table rendering for AI Tutor
+- `src/review.js` — completed-attempt answer states and timing display helpers
 - `src/storage.js` — offline persistence and backups
 - `tests/` — automated regression tests
 - `ci-workflow.example.yml` — optional private CI template; copy it to `.github/workflows/ci.yml` when workflow-write permission is available
