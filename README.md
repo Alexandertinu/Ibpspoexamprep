@@ -42,7 +42,7 @@ No provider or model catalog is hard-coded. Enter the platform's endpoint and ex
 
 Save multiple connection profiles at the same time. Each profile can hold multiple discovered or manually entered model IDs, while its key remains only in session memory. The configured platform must permit browser CORS.
 
-The dedicated **AI Tutor** is an exam-only teacher chat. It keeps recent conversation locally and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice. Provider and model selectors inside the chat let you switch among every configured free or paid model without leaving the conversation.
+The dedicated **AI Tutor** is an exam-only teacher chat. It stores multiple named conversations locally, includes a focused fullscreen mode, renders Markdown tables and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice. Connection and model selectors inside the chat let you switch among every configured model without leaving the conversation.
 
 **Import & AI** can:
 
@@ -64,7 +64,8 @@ Browser security still applies. The configured endpoint must permit browser CORS
 4. Use **Questions** to add, edit, select, delete or import questions.
 5. Use **AI Tutor** for explanations, faster techniques, time strategy and personalised guidance.
 6. Use **Import & AI** to convert a paper directly into a runnable test or generate new practice.
-7. Export a full backup regularly.
+7. Open **Guide** for in-app instructions, templates, import steps and AI connection help.
+8. Export a full backup regularly; backups include AI Tutor chat history but never API keys.
 
 The standalone file contains the full interface, starter bank and application logic. No installation, server or AI subscription is required for offline practice.
 
@@ -144,7 +145,8 @@ Imported questions merge by ID; an existing ID is replaced. Always verify AI-gen
 - `src/app.js` — navigation, editors, exam mode, history and AI Studio
 - `src/questions.js` — starter bank and universal import validation
 - `src/analytics.js` — objective/descriptive scoring and coaching packets
-- `src/ai.js` — Gemini and OpenAI-compatible adapters
+- `src/ai.js` — configurable Chat Completions, Messages and Generate Content adapters
+- `src/markdown.js` — safe rich-text and table rendering for AI Tutor
 - `src/storage.js` — offline persistence and backups
 - `tests/` — automated regression tests
 - `ci-workflow.example.yml` — optional private CI template; copy it to `.github/workflows/ci.yml` when workflow-write permission is available

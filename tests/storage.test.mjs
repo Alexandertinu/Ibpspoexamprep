@@ -19,11 +19,24 @@ test('AI credentials are stripped from saved configuration and backups', () => {
   assert.equal(storage.exportAll().aiProfiles[0].apiKey, undefined);
 });
 
-test('tutor conversation can be saved, exported and cleared', () => {
+test('legacy tutor conversation can be saved, exported and cleared', () => {
   const messages = [{ role: 'user', content: 'Explain percentages' }];
   storage.saveTutor(messages);
   assert.deepEqual(storage.loadTutor(), messages);
   assert.deepEqual(storage.exportAll().tutor, messages);
   storage.clearTutor();
   assert.deepEqual(storage.loadTutor(), []);
+});
+
+test('multiple tutor chats are stored in backups and can be cleared', () => {
+  const chats = [
+    { id: 'chat-1', title: 'Percentage analysis', messages: [{ role: 'user', content: 'Analyse my score' }] },
+    { id: 'chat-2', title: 'Reasoning shortcuts', messages: [{ role: 'assistant', content: 'Start with direct questions.' }] },
+  ];
+  storage.saveTutorChats(chats);
+  assert.deepEqual(storage.loadTutorChats(), chats);
+  assert.deepEqual(storage.exportAll().tutorChats, chats);
+  assert.equal(storage.exportAll().schemaVersion, 3);
+  storage.clearTutorChats();
+  assert.deepEqual(storage.loadTutorChats(), []);
 });

@@ -7,6 +7,7 @@ const KEYS = {
   aiConfig: 'po-prep-ai-config-v1',
   aiProfiles: 'po-prep-ai-profiles-v1',
   tutor: 'po-prep-tutor-v1',
+  tutorChats: 'po-prep-tutor-chats-v1',
 };
 
 const memoryFallback = new Map();
@@ -55,9 +56,12 @@ export const storage = {
   loadTutor: () => read(KEYS.tutor, []),
   saveTutor: (messages) => write(KEYS.tutor, messages),
   clearTutor: () => remove(KEYS.tutor),
+  loadTutorChats: () => read(KEYS.tutorChats, []),
+  saveTutorChats: (chats) => write(KEYS.tutorChats, chats),
+  clearTutorChats: () => remove(KEYS.tutorChats),
   clearAll: () => Object.values(KEYS).forEach(remove),
   exportAll: () => ({
-    schemaVersion: 2,
+    schemaVersion: 3,
     exportedAt: new Date().toISOString(),
     bank: read(KEYS.bank, null),
     attempts: read(KEYS.attempts, []),
@@ -66,5 +70,6 @@ export const storage = {
     aiConfig: sanitizeConfig(read(KEYS.aiConfig, null)),
     aiProfiles: (read(KEYS.aiProfiles, []) || []).map(sanitizeConfig),
     tutor: read(KEYS.tutor, []),
+    tutorChats: read(KEYS.tutorChats, []),
   }),
 };
