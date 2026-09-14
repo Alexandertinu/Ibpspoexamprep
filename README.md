@@ -106,6 +106,26 @@ See `question-bank-template.json`. Key rules:
 - `marks` and `negativeMarks`: numeric values per question
 - `section`: controls the tab shown in exam mode
 - descriptive questions may include `modelAnswer`, `wordLimit` and `rubric`
+- `table` (optional): structured data rendered as an HTML table in the exam — `{ "caption": "...", "headers": ["col1", "col2"], "rows": [["a", "b"]] }`
+- `image` (optional): diagram or chart rendered in the exam — `{ "src": "https://… or data:image/…", "alt": "description", "caption": "optional" }`
+
+## Mock-test import (no AI needed)
+
+Upload a JSON file with a `title` and `questions` array to create a runnable test instantly. The questions are merged into your bank and a test card appears on the Practice page.
+
+```json
+{
+  "test": {
+    "title": "Quant DI Mock 1",
+    "description": "Data interpretation practice",
+    "durationMinutes": 20,
+    "shuffle": true,
+    "questions": [ { "id": "Q1", "type": "mcq", ... } ]
+  }
+}
+```
+
+A minimal format without the `test` wrapper also works — just include `title` and `questions` at the top level. Download the template from the Practice page for a complete example.
 
 Imported questions merge by ID; an existing ID is replaced. Always verify AI-generated or extracted answer keys before serious practice.
 

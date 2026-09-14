@@ -17,6 +17,54 @@
       "source": "Personal question bank"
     },
     {
+      "id": "Q-DEMO-001",
+      "type": "mcq",
+      "subject": "Quantitative Aptitude",
+      "section": "Quantitative Aptitude",
+      "topic": "Data Interpretation",
+      "difficulty": "Prelims",
+      "passage": "Study the table and answer the question.",
+      "table": {
+        "caption": "Sales data for five branches",
+        "headers": ["Branch", "Q1 Sales", "Q2 Sales", "% Growth"],
+        "rows": [
+          ["Mumbai", "₹45L", "₹52L", "15.6%"],
+          ["Delhi", "₹38L", "₹41L", "7.9%"],
+          ["Chennai", "₹29L", "₹35L", "20.7%"],
+          ["Kolkata", "₹33L", "₹31L", "-6.1%"],
+          ["Hyderabad", "₹41L", "₹48L", "17.1%"]
+        ]
+      },
+      "question": "Which branch had the highest absolute increase in sales from Q1 to Q2?",
+      "options": ["Mumbai", "Delhi", "Chennai", "Kolkata", "Hyderabad"],
+      "answer": 0,
+      "marks": 1,
+      "negativeMarks": 0.25,
+      "explanation": "Mumbai: 52−45 = ₹7L increase, the largest among all branches.",
+      "source": "Personal question bank"
+    },
+    {
+      "id": "Q-DEMO-002",
+      "type": "mcq",
+      "subject": "Quantitative Aptitude",
+      "section": "Quantitative Aptitude",
+      "topic": "Data Interpretation",
+      "difficulty": "Prelims",
+      "passage": "Study the bar graph and answer the question.",
+      "image": {
+        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTgwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjE1MCIgeT0iOTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiPkRlbW8gZGlhZ3JhbSBwbGFjZWhvbGRlcjwvdGV4dD48L3N2Zz4=",
+        "alt": "Bar graph showing quarterly revenue",
+        "caption": "Revenue by quarter (₹ lakhs)"
+      },
+      "question": "What was the total revenue across all four quarters?",
+      "options": ["₹120L", "₹135L", "₹150L", "₹165L", "₹180L"],
+      "answer": 2,
+      "marks": 1,
+      "negativeMarks": 0.25,
+      "explanation": "Sum the values shown in the diagram.",
+      "source": "Personal question bank"
+    },
+    {
       "id": "D-DEMO-001",
       "type": "descriptive",
       "subject": "English Language",

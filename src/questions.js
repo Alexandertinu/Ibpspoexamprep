@@ -69,6 +69,26 @@ export const starterBank = [
 
 export const SUBJECTS = ['Reasoning Ability', 'Quantitative Aptitude', 'English Language', 'General Awareness'];
 
+export function normalizeTable(table) {
+  if (!table) return null;
+  const caption = String(table.caption || '').trim();
+  const headers = Array.isArray(table.headers) ? table.headers.map((cell) => String(cell ?? '')) : [];
+  const rows = Array.isArray(table.rows) ? table.rows.map((row) => (Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : [])) : [];
+  if (!headers.length && !rows.length) return null;
+  const cols = Math.max(headers.length, ...rows.map((row) => row.length), 0);
+  if (!cols) return null;
+  const pad = (cells) => [...cells, ...Array(Math.max(0, cols - cells.length)).fill('')];
+  return { caption, headers: pad(headers), rows: rows.map(pad) };
+}
+
+export function normalizeImage(image) {
+  if (!image) return null;
+  const src = String(image.src || image.url || image.data || '').trim();
+  if (!src) return null;
+  if (!/^(data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,|https?:\/\/|\/|\.{1,2}\/)/i.test(src)) return null;
+  return { src, alt: String(image.alt || image.caption || 'Question diagram').trim(), caption: String(image.caption || '').trim() };
+}
+
 export function normalizeImportedBank(payload) {
   const source = Array.isArray(payload) ? payload : payload?.questions;
   if (!Array.isArray(source)) throw new Error('Expected a JSON array or an object with a questions array.');
@@ -85,6 +105,8 @@ export function normalizeImportedBank(payload) {
     if (ids.has(id)) throw new Error(`Duplicate question id: ${id}`);
     ids.add(id);
     const subject = String(item.subject || 'General Awareness').trim();
+    const table = normalizeTable(item.table);
+    const image = normalizeImage(item.image);
     return {
       id, type, subject, section: String(item.section || subject), topic: String(item.topic || 'Imported'), question,
       options: type === 'mcq' ? options : [], answer,
@@ -94,6 +116,26 @@ export function normalizeImportedBank(payload) {
       marks: Math.max(0, Number(item.marks) || (type === 'mcq' ? 1 : 10)),
       negativeMarks: Math.max(0, Number(item.negativeMarks) || (type === 'mcq' ? 0.25 : 0)),
       source: String(item.source || 'Imported JSON'),
+      ...(table ? { table } : {}),
+      ...(image ? { image } : {}),
     };
   });
+}
+
+export function normalizeImportedTest(payload) {
+  const source = payload?.test && typeof payload.test === 'object' ? payload.test : (payload?.title !== undefined ? payload : null);
+  if (!source) throw new Error('Expected a JSON object with a "test" wrapper or top-level test fields (title + questions).');
+  const title = String(source.title || source.name || '').trim();
+  if (!title) throw new Error('The test needs a title.');
+  const questions = normalizeImportedBank(source.questions || source.questionBank || []);
+  if (!questions.length) throw new Error('The test contains no valid questions.');
+  const descriptiveCount = questions.filter((question) => question.type === 'descriptive').length;
+  const defaultMinutes = Math.max(5, Math.ceil((questions.length - descriptiveCount) * 0.75 + descriptiveCount * 20));
+  return {
+    title: title.slice(0, 120),
+    description: String(source.description || '').trim().slice(0, 300),
+    durationMinutes: Math.max(1, Math.min(600, Number(source.durationMinutes ?? source.minutes ?? defaultMinutes) || defaultMinutes)),
+    shuffle: source.shuffle !== false,
+    questions,
+  };
 }
