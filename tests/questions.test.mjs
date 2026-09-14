@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeImportedBank, normalizeImportedTest, starterBank } from '../src/questions.js';
+import { migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, starterBank } from '../src/questions.js';
 
 test('starter bank has unique valid ids and supports four subjects plus descriptive', () => {
   const ids = new Set();
@@ -105,8 +105,10 @@ test('normalizeImportedTest accepts course format with letter-keyed options and 
   const result = normalizeImportedTest(payload);
   assert.equal(result.title, 'IBPS PO Prelims 2026 Quantitative Aptitude — Day 17');
   assert.equal(result.questions.length, 3);
-  // Q1 should have section context
-  assert.equal(result.questions[0].section, 'Data Interpretation');
+  // Course topic groups provide context but remain one exam section.
+  assert.equal(result.questions[0].subject, 'Quantitative Aptitude');
+  assert.equal(result.questions[0].section, 'Quantitative Aptitude');
+  assert.equal(result.questions[0].topic, 'Data Interpretation');
   assert.ok(result.questions[0].passage.includes('Study the table'));
   assert.ok(result.questions[0].passage.includes('All values in thousands'));
   assert.ok(result.questions[0].table);
@@ -118,7 +120,22 @@ test('normalizeImportedTest accepts course format with letter-keyed options and 
   // Q3 should have no context
   assert.equal(result.questions[2].passage, '');
   assert.equal(result.questions[2].table, undefined);
-  assert.equal(result.questions[2].section, 'Simplification');
+  assert.equal(result.questions[2].section, 'Quantitative Aptitude');
+  assert.equal(result.questions[2].topic, 'Simplification');
+});
+
+test('migrateStoredBank flattens previously imported course subsections', () => {
+  const [question] = migrateStoredBank([{ id: 'IBP-D17-Q001', subject: 'IBPS PO Prelims 2026 Quantitative Aptitude', section: 'Data Interpretation - Coaching Centers', topic: 'Data Interpretation', source: 'IBPS PO Prelims 2026 Quantitative Aptitude Bundle PDF Course' }]);
+  assert.equal(question.subject, 'Quantitative Aptitude');
+  assert.equal(question.section, 'Quantitative Aptitude');
+  assert.equal(question.topic, 'Data Interpretation');
+});
+
+test('shuffleItems randomizes enabled tests and preserves explicit no-shuffle order', () => {
+  const input = [1, 2, 3, 4];
+  assert.deepEqual(shuffleItems(input, false, () => 0), input);
+  assert.deepEqual(shuffleItems(input, true, () => 0), [2, 3, 4, 1]);
+  assert.deepEqual(input, [1, 2, 3, 4]);
 });
 
 test('normalizeImportedTest rejects course format with no questions', () => {

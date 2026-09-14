@@ -69,6 +69,16 @@ export const starterBank = [
 
 export const SUBJECTS = ['Reasoning Ability', 'Quantitative Aptitude', 'English Language', 'General Awareness'];
 
+export function shuffleItems(items, enabled = true, random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) {
+  const copy = [...items];
+  if (!enabled) return copy;
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export function normalizeTable(table) {
   if (!table) return null;
   const caption = String(table.caption || '').trim();
@@ -96,6 +106,22 @@ function isCourseFormat(payload) {
     && typeof payload.questions[0].correct_answer === 'string';
 }
 
+const COURSE_SUBJECTS = ['Quantitative Aptitude', 'Reasoning Ability', 'English Language', 'General Awareness', 'Computer Awareness', 'Banking Awareness'];
+
+function inferCourseSubject(value) {
+  const title = String(value || '');
+  return COURSE_SUBJECTS.find((subject) => title.toLowerCase().includes(subject.toLowerCase())) || '';
+}
+
+export function migrateStoredBank(items) {
+  if (!Array.isArray(items)) return items;
+  return items.map((question) => {
+    const subject = inferCourseSubject(question.source || question.subject);
+    if (!subject || (question.subject === subject && question.section === subject)) return question;
+    return { ...question, subject, section: subject };
+  });
+}
+
 function convertCourseFormat(payload) {
   const sectionContexts = [];
   if (Array.isArray(payload.sections)) {
@@ -118,8 +144,10 @@ function convertCourseFormat(payload) {
     });
   }
 
-  const subject = payload.course_title ? String(payload.course_title).replace(/\s*(bundle|pdf|course|day\s*\d+).*$/i, '').trim() : 'Quantitative Aptitude';
-  const title = payload.course_title ? `${subject} — Day ${payload.day || ''}`.replace(/\s+/g, ' ').trim() : 'Imported Mock Test';
+  const courseTitle = String(payload.course_title || '').replace(/\s*(bundle\s+pdf\s+course|pdf\s+course|course)\s*$/i, '').trim();
+  const subject = inferCourseSubject(courseTitle) || 'Quantitative Aptitude';
+  const idPrefix = courseTitle.replace(/\s+/g, '').slice(0, 3).toUpperCase() || subject.replace(/\s+/g, '').slice(0, 3).toUpperCase();
+  const title = courseTitle ? `${courseTitle} — Day ${payload.day || ''}`.replace(/\s+/g, ' ').trim() : 'Imported Mock Test';
 
   const questions = payload.questions.map((item, index) => {
     const qNum = Number(item.question_number || index + 1);
@@ -134,10 +162,10 @@ function convertCourseFormat(payload) {
     const table = sectionCtx?.table || null;
 
     return {
-      id: `${subject.replace(/\s+/g, '').slice(0, 3).toUpperCase()}-D${payload.day || '0'}-Q${String(qNum).padStart(3, '0')}`,
+      id: `${idPrefix}-D${payload.day || '0'}-Q${String(qNum).padStart(3, '0')}`,
       type: 'mcq',
       subject: subject,
-      section: sectionCtx ? String(payload.sections?.find((s) => { const r = String(s.question_range || '').match(/(\d+)\s*-\s*(\d+)/); return r && qNum >= Number(r[1]) && qNum <= Number(r[2]); })?.section_name || subject) : subject,
+      section: subject,
       topic: questionType || 'General',
       difficulty: 'Prelims',
       passage: passage,
