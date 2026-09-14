@@ -129,6 +129,6 @@ export function buildCoachPacket(attempt, analytics) {
   };
 }
 
-export function buildGeminiPrompt(packet) {
+export function buildCoachPrompt(packet) {
   return `You are my evidence-based bank-exam performance coach. Analyze this objective and/or descriptive attempt. For descriptive responses, score against the supplied maximum marks and rubric, then give line-level improvements and a better outline. For objective responses, diagnose accuracy, question selection, time management and avoidable negative marking. Return: (1) score adjustment for descriptive items, (2) three most important patterns, (3) a three-session plan with measurable targets, and (4) decision rules for my next test. Do not infer weakness from a test run.\n\nATTEMPT_PACKET\n${JSON.stringify(packet, null, 2)}`;
 }

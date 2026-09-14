@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node scripts/build-standalone.mjs",
     "test": "node --test",
-    "check": "node --check src/app.js && node --check src/analytics.js && node --check src/questions.js && node --check src/storage.js && node --check src/ai.js && node --check scripts/build-standalone.mjs",
+    "check": "node --check src/app.js && node --check src/analytics.js && node --check src/questions.js && node --check src/storage.js && node --check src/markdown.js && node --check src/ai.js && node --check scripts/build-standalone.mjs",
     "verify": "npm run check && npm test && npm run build"
   },
   "engines": {

@@ -1,59 +1,52 @@
 const DEFAULTS = {
-  gemini: {
-    label: 'Google Gemini',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    model: 'gemini-2.5-flash',
-  },
-  anthropic: {
-    label: 'Anthropic Claude',
-    baseUrl: 'https://api.anthropic.com/v1/messages',
-    model: 'claude-sonnet-4-6',
-  },
-  inception: {
-    label: 'Inception Labs Mercury',
-    baseUrl: 'https://api.inceptionlabs.ai/v1/chat/completions',
-    model: 'mercury-2',
-  },
-  openai: {
-    label: 'Other OpenAI-compatible',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4.1-mini',
-  },
+  openai: { label: 'Chat Completions compatible', baseUrl: '', model: '', authMode: 'bearer', authHeader: 'Authorization', authPrefix: 'Bearer ' },
+  anthropic: { label: 'Messages compatible', baseUrl: '', model: '', authMode: 'header', authHeader: 'x-api-key', authPrefix: '' },
+  gemini: { label: 'Generate Content compatible', baseUrl: '', model: '', authMode: 'header', authHeader: 'x-goog-api-key', authPrefix: '' },
 };
 
 export function providerDefaults(provider) {
   return { ...(DEFAULTS[provider] || DEFAULTS.openai) };
 }
 
-export function inferProvider(baseUrl='') {
-  const host = (() => { try { return new URL(baseUrl).hostname; } catch { return ''; } })();
-  if (host.includes('generativelanguage.googleapis.com')) return 'gemini';
-  if (host.includes('anthropic.com')) return 'anthropic';
-  if (host.includes('inceptionlabs.ai')) return 'inception';
+export function inferProvider() {
   return 'openai';
 }
 
 export function validateAIConfig(config) {
-  if (!['gemini', 'anthropic', 'inception', 'openai'].includes(config.provider)) throw new Error('Choose Gemini, Claude, Inception Mercury or another OpenAI-compatible provider.');
-  const url = new URL(config.baseUrl);
+  if (!['openai', 'anthropic', 'gemini'].includes(config.provider)) throw new Error('Choose the API format used by your provider.');
+  const url = new URL(String(config.baseUrl || '').trim());
   if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') throw new Error('Use an HTTPS endpoint, or localhost for a trusted local model.');
-  if (!String(config.model || '').trim()) throw new Error('Enter a model name.');
-  return { ...config, baseUrl: config.baseUrl.replace(/\/+$/, ''), model: config.model.trim() };
+  if (!String(config.model || '').trim()) throw new Error('Enter the model ID required by your provider.');
+  const authMode = ['bearer', 'header', 'none', 'apiKey'].includes(config.authMode) ? config.authMode : 'bearer';
+  return {
+    ...config,
+    authMode: authMode === 'apiKey' ? (config.provider === 'openai' ? 'bearer' : 'header') : authMode,
+    authHeader: String(config.authHeader || providerDefaults(config.provider).authHeader || 'Authorization').trim(),
+    authPrefix: String(config.authPrefix ?? providerDefaults(config.provider).authPrefix ?? ''),
+    baseUrl: url.toString().replace(/\/+$/, ''),
+    modelsUrl: String(config.modelsUrl || '').trim().replace(/\/+$/, ''),
+    model: config.model.trim(),
+  };
 }
 
 function modelsEndpoint(config) {
+  if (config.modelsUrl) return config.modelsUrl;
   if (config.provider === 'gemini') return `${config.baseUrl.replace(/\/+$/, '')}/models`;
   if (config.provider === 'anthropic') return config.baseUrl.replace(/\/v1\/messages$/, '/v1/models');
   return config.baseUrl.replace(/\/chat\/completions$/, '').replace(/\/+$/, '') + '/models';
 }
 
+function authHeaders(config, apiKey) {
+  if (!apiKey || config.authMode === 'none') return {};
+  if (config.provider === 'anthropic') return { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+  if (config.provider === 'gemini') return { 'x-goog-api-key': apiKey };
+  return { [config.authHeader || 'Authorization']: `${config.authPrefix ?? 'Bearer '}${apiKey}` };
+}
+
 export async function discoverModels({ config, apiKey, timeoutMs = 30000 }) {
   const safeConfig = validateAIConfig(config);
-  if (!apiKey && !(safeConfig.provider === 'openai' && safeConfig.authMode === 'none')) throw new Error('Enter a key before fetching models, or use no authentication for a trusted local endpoint.');
-  const headers = { Accept: 'application/json' };
-  if (safeConfig.provider === 'gemini') headers['x-goog-api-key'] = apiKey;
-  else if (safeConfig.provider === 'anthropic') { headers['x-api-key'] = apiKey; headers['anthropic-version'] = '2023-06-01'; headers['anthropic-dangerous-direct-browser-access'] = 'true'; }
-  else if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  if (!apiKey && safeConfig.authMode !== 'none') throw new Error('Enter an API key before fetching models, or choose no authentication for a trusted local endpoint.');
+  const headers = { Accept: 'application/json', ...authHeaders(safeConfig, apiKey) };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -103,27 +96,26 @@ async function requestGemini(config, apiKey, prompt, attachment, signal) {
   if (attachment?.base64) parts.push({ inlineData: { mimeType: attachment.mimeType, data: attachment.base64 } });
   const response = await fetch(geminiEndpoint(config), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(config, apiKey) },
     body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: config.temperature ?? 0.2 } }),
     signal,
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.error?.message || `Gemini request failed (${response.status}).`);
+  if (!response.ok) throw new Error(payload?.error?.message || `Generate Content request failed (${response.status}).`);
   const text = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('\n').trim();
-  if (!text) throw new Error('Gemini returned no text. Check the model name and safety settings.');
+  if (!text) throw new Error('The Generate Content endpoint returned no text. Check the model ID and platform settings.');
   return text;
 }
 
 async function requestOpenAI(config, apiKey, prompt, attachment, signal) {
-  if (attachment?.base64 && attachment.mimeType === 'application/pdf') throw new Error('Direct PDF upload is not standardized for OpenAI-compatible endpoints. Use Gemini, or extract the PDF to text first.');
+  if (attachment?.base64 && attachment.mimeType === 'application/pdf') throw new Error('Direct PDF upload is not standardized for Chat Completions endpoints. Extract the PDF to text or use a compatible multimodal endpoint.');
   let content = prompt;
   if (attachment?.text) content += `\n\nATTACHED FILE: ${attachment.name}\n${attachment.text}`;
   if (attachment?.base64 && attachment.mimeType.startsWith('image/')) content = [
     { type: 'text', text: prompt },
     { type: 'image_url', image_url: { url: `data:${attachment.mimeType};base64,${attachment.base64}` } },
   ];
-  const headers = { 'Content-Type': 'application/json' };
-  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const headers = { 'Content-Type': 'application/json', ...authHeaders(config, apiKey) };
   const response = await fetch(openAIEndpoint(config), {
     method: 'POST',
     headers,
@@ -142,31 +134,26 @@ function anthropicEndpoint(config) {
 }
 
 async function requestAnthropic(config, apiKey, prompt, attachment, signal) {
-  if (attachment?.base64 && attachment.mimeType === 'application/pdf') throw new Error('Direct PDF upload is not enabled for this Claude adapter. Extract the PDF to text or use Gemini for paper conversion.');
+  if (attachment?.base64 && attachment.mimeType === 'application/pdf') throw new Error('Direct PDF upload is not enabled for the Messages adapter. Extract the PDF to text or use a compatible multimodal endpoint.');
   let content = [{ type: 'text', text: prompt }];
   if (attachment?.text) content.push({ type: 'text', text: `\n\nATTACHED FILE: ${attachment.name}\n${attachment.text}` });
   if (attachment?.base64 && attachment.mimeType.startsWith('image/')) content.push({ type: 'image', source: { type: 'base64', media_type: attachment.mimeType, data: attachment.base64 } });
   const response = await fetch(anthropicEndpoint(config), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(config, apiKey) },
     body: JSON.stringify({ model: config.model, max_tokens: Number(config.maxTokens || 4096), messages: [{ role: 'user', content }] }),
     signal,
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.error?.message || `Claude request failed (${response.status}).`);
+  if (!response.ok) throw new Error(payload?.error?.message || `Messages request failed (${response.status}).`);
   const text = Array.isArray(payload?.content) ? payload.content.map((block) => block?.text || '').join('\n').trim() : '';
-  if (!text) throw new Error('Claude returned no text. Check the model name and account access.');
+  if (!text) throw new Error('The Messages endpoint returned no text. Check the model ID and account access.');
   return text;
 }
 
 export async function callAI({ config, apiKey, prompt, attachment = null, timeoutMs = 90000 }) {
   const safeConfig = validateAIConfig(config);
-  if (!apiKey && !(safeConfig.provider === 'openai' && safeConfig.authMode === 'none')) throw new Error('Enter an API key, or choose no authentication for a trusted local OpenAI-compatible endpoint.');
+  if (!apiKey && safeConfig.authMode !== 'none') throw new Error('Enter an API key, or choose no authentication for a trusted local endpoint.');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {

@@ -31,18 +31,16 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 
 ### AI Tutor and Import & AI
 
-Supported connection modes:
+Connect any AI platform that exposes one of these browser-accessible API formats:
 
-- Google Gemini REST API
-- Anthropic Claude Messages API
-- Inception Labs Mercury (`mercury-2`) preset
-- Other OpenAI-compatible chat-completions endpoints
-- Trusted local OpenAI-compatible endpoints without authentication
-- OpenAI-compatible services such as Groq, Mistral, NVIDIA NIM and OpenRouter when their endpoint supports browser CORS
+- Chat Completions compatible
+- Messages compatible
+- Generate Content compatible
+- Trusted local endpoints without authentication
 
-Save multiple provider profiles at the same time. Each profile can hold multiple discovered or manually entered model names, while its key remains only in session memory. The app can query standard model-list endpoints and populate model choices automatically; providers that do not expose model discovery still allow manual model entry.
+No provider or model catalog is hard-coded. Enter the platform's endpoint and exact model ID, then choose bearer-token, custom-header or no authentication. An optional model-list endpoint can discover models when the platform exposes one.
 
-Configure the provider, HTTPS base URL, model name and authentication mode in Import & AI. API keys are held only in memory for the current browser tab and are never written to storage, backups or the repository.
+Save multiple connection profiles at the same time. Each profile can hold multiple discovered or manually entered model IDs, while its key remains only in session memory. The configured platform must permit browser CORS.
 
 The dedicated **AI Tutor** is an exam-only teacher chat. It keeps recent conversation locally and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice. Provider and model selectors inside the chat let you switch among every configured free or paid model without leaving the conversation.
 
@@ -56,7 +54,7 @@ The dedicated **AI Tutor** is an exam-only teacher chat. It keeps recent convers
 - Grade descriptive responses against their rubrics and maximum marks
 - Save AI feedback with an attempt
 
-Browser security still applies. A custom endpoint must permit browser CORS. Gemini is the best built-in option for direct PDF/image conversion. OpenAI-compatible PDF upload formats are not standardized, so use text extraction or an image-capable endpoint when required.
+Browser security still applies. The configured endpoint must permit browser CORS. Direct PDF and image support varies by API format and platform; use text extraction or an image-capable endpoint when the selected platform does not accept that file type.
 
 ## Fastest way to use it
 
