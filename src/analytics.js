@@ -119,7 +119,7 @@ export function buildCoachPacket(attempt, analytics) {
     summary: { score: analytics.score, maxScore: analytics.maxScore, total: analytics.total, correct: analytics.correct, wrong: analytics.wrong, skipped: analytics.skipped, descriptivePending: analytics.descriptivePending, accuracy: analytics.accuracy, elapsedSeconds: attempt.elapsedSeconds, activeQuestionSeconds: analytics.totalActiveSeconds, answerChanges: analytics.totalAnswerChanges },
     subjectBreakdown: analytics.bySubject, topicBreakdown: analytics.byTopic,
     responses: analytics.rows.map((row) => ({
-      number: row.index + 1, type: row.question.type || 'mcq', subject: row.question.subject, section: row.question.section, topic: row.question.topic,
+      questionId: row.question.id, number: row.index + 1, type: row.question.type || 'mcq', subject: row.question.subject, section: row.question.section, topic: row.question.topic,
       question: row.question.question,
       response: row.question.type === 'descriptive' ? (row.selected || null) : (row.selected === undefined || row.selected === null ? null : row.question.options[row.selected]),
       correctOption: row.question.type === 'descriptive' ? null : row.question.options[row.question.answer],

@@ -36,6 +36,7 @@ test('buildAnalytics aggregates active time, visits, changes and topics', () => 
 test('coach packet contains per-question response and timing data', () => {
   const analytics = buildAnalytics({ questions, answers: { 0: 0 }, timeByQuestion: { 0: 9000 } });
   const packet = buildCoachPacket({ title: 'Mock', completedAt: '2026-01-01', elapsedSeconds: 30 }, analytics);
+  assert.equal(packet.responses[0].questionId, '1');
   assert.equal(packet.responses[0].activeSeconds, 9);
   assert.equal(packet.responses[0].response, 'x');
   assert.equal(packet.responses[1].response, null);

@@ -29,7 +29,7 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Subject performance trends for accuracy and average question time
 - Automatic mistake notebook with mastery notes and targeted retry tests
 - Read-only exam-style answer review with submitted answers, correct keys, explanations and per-question time
-- Question-focused AI coaching inside review, using the full attempt context with follow-up chat saved to Tutor history
+- Persistent per-mock AI coaching inside review: the full attempt is sent once, later questions use compact saved context, and all analyses remain in one Tutor-history conversation
 - Color-coded review palette for correct, incorrect, skipped and pending questions
 - Deterministic offline coaching that works without an AI connection
 - Genuine-attempt versus UI-test flagging
