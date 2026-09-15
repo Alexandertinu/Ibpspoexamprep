@@ -29,6 +29,7 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Subject performance trends for accuracy and average question time
 - Automatic mistake notebook with mastery notes and targeted retry tests
 - Read-only exam-style answer review with submitted answers, correct keys, explanations and per-question time
+- Question-focused AI coaching inside review, using the full attempt context with follow-up chat saved to Tutor history
 - Color-coded review palette for correct, incorrect, skipped and pending questions
 - Deterministic offline coaching that works without an AI connection
 - Genuine-attempt versus UI-test flagging
@@ -153,6 +154,7 @@ Imported questions merge by ID; an existing ID is replaced. Always verify AI-gen
 - `src/ai.js` — configurable Chat Completions, Messages and Generate Content adapters
 - `src/markdown.js` — safe rich-text and table rendering for AI Tutor
 - `src/review.js` — completed-attempt answer states and timing display helpers
+- `src/review-ai.js` — question-focused AI coaching prompts and chat identity
 - `src/mock-builder.js` — simple chapter-based and manual mock creation validation
 - `src/progress.js` — subject trends and mistake-notebook calculations
 - `src/storage.js` — offline persistence and backups
