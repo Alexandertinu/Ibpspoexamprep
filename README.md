@@ -12,6 +12,7 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Reasoning, Quantitative Aptitude, English, General Awareness and Descriptive starter content
 - Simple custom mock builder with chapter-based random selection or exact manual question selection
 - User-controlled test name, question count, duration and question shuffling
+- Shared DI, puzzle and passage sets that stay together when question order is shuffled
 - AI Tutor mock creation from the local catalog when explicitly requested
 - Question-specific marks and negative marks
 - Configurable duration and question count
@@ -25,6 +26,8 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Objective scoring using each question's marks and negative marks
 - Descriptive responses held as Pending Review until manually or AI graded
 - Subject and topic breakdowns
+- Subject performance trends for accuracy and average question time
+- Automatic mistake notebook with mastery notes and targeted retry tests
 - Read-only exam-style answer review with submitted answers, correct keys, explanations and per-question time
 - Color-coded review palette for correct, incorrect, skipped and pending questions
 - Deterministic offline coaching that works without an AI connection
@@ -150,6 +153,8 @@ Imported questions merge by ID; an existing ID is replaced. Always verify AI-gen
 - `src/ai.js` — configurable Chat Completions, Messages and Generate Content adapters
 - `src/markdown.js` — safe rich-text and table rendering for AI Tutor
 - `src/review.js` — completed-attempt answer states and timing display helpers
+- `src/mock-builder.js` — simple chapter-based and manual mock creation validation
+- `src/progress.js` — subject trends and mistake-notebook calculations
 - `src/storage.js` — offline persistence and backups
 - `tests/` — automated regression tests
 - `ci-workflow.example.yml` — optional private CI template; copy it to `.github/workflows/ci.yml` when workflow-write permission is available

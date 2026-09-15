@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, starterBank } from '../src/questions.js';
+import { migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, shuffleQuestionSets, starterBank } from '../src/questions.js';
 
 test('starter bank has unique valid ids and supports four subjects plus descriptive', () => {
   const ids = new Set();
@@ -136,6 +136,31 @@ test('shuffleItems randomizes enabled tests and preserves explicit no-shuffle or
   assert.deepEqual(shuffleItems(input, false, () => 0), input);
   assert.deepEqual(shuffleItems(input, true, () => 0), [2, 3, 4, 1]);
   assert.deepEqual(input, [1, 2, 3, 4]);
+});
+
+test('shuffleQuestionSets keeps shared DI or puzzle questions together', () => {
+  const input = [
+    { id: 'a1', setId: 'set-a' }, { id: 'a2', setId: 'set-a' },
+    { id: 'single' },
+    { id: 'b1', setId: 'set-b' }, { id: 'b2', setId: 'set-b' },
+  ];
+  const shuffled = shuffleQuestionSets(input, true, () => 0);
+  const ids = shuffled.map((item) => item.id);
+  assert.equal(Math.abs(ids.indexOf('a1') - ids.indexOf('a2')), 1);
+  assert.equal(Math.abs(ids.indexOf('b1') - ids.indexOf('b2')), 1);
+  assert.ok(ids.indexOf('a1') < ids.indexOf('a2'));
+  assert.ok(ids.indexOf('b1') < ids.indexOf('b2'));
+});
+
+test('normalizer preserves explicit set IDs and infers repeated shared contexts', () => {
+  const questions = normalizeImportedBank({ questions: [
+    { id: 'q1', question: 'First?', options: ['A', 'B'], answer: 0, subject: 'Reasoning Ability', topic: 'Puzzle', passage: 'Shared clues' },
+    { id: 'q2', question: 'Second?', options: ['A', 'B'], answer: 1, subject: 'Reasoning Ability', topic: 'Puzzle', passage: 'Shared clues' },
+    { id: 'q3', question: 'Third?', options: ['A', 'B'], answer: 0, setId: 'manual-set' },
+  ] });
+  assert.ok(questions[0].setId);
+  assert.equal(questions[0].setId, questions[1].setId);
+  assert.equal(questions[2].setId, 'manual-set');
 });
 
 test('normalizeImportedTest rejects course format with no questions', () => {

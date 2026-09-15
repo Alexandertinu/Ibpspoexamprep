@@ -79,6 +79,23 @@ export function shuffleItems(items, enabled = true, random = () => crypto.getRan
   return copy;
 }
 
+export function shuffleQuestionSets(items, enabled = true, random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) {
+  const copy = [...items];
+  if (!enabled) return copy;
+  const groups = [];
+  const bySet = new Map();
+  copy.forEach((item, index) => {
+    const key = item.setId ? `set:${item.setId}` : `single:${index}`;
+    if (!bySet.has(key)) {
+      const group = [];
+      bySet.set(key, group);
+      groups.push(group);
+    }
+    bySet.get(key).push(item);
+  });
+  return shuffleItems(groups, true, random).flat();
+}
+
 export function normalizeTable(table) {
   if (!table) return null;
   const caption = String(table.caption || '').trim();
@@ -113,22 +130,39 @@ function inferCourseSubject(value) {
   return COURSE_SUBJECTS.find((subject) => title.toLowerCase().includes(subject.toLowerCase())) || '';
 }
 
+function sharedSetSignature(question) {
+  if (question.type === 'descriptive' || (!question.passage && !question.table && !question.image)) return '';
+  return JSON.stringify([question.subject, question.topic, question.passage || '', question.table || null, question.image?.src || '']);
+}
+
+function signatureId(signature) {
+  let hash = 0;
+  for (let index = 0; index < signature.length; index += 1) hash = ((hash << 5) - hash + signature.charCodeAt(index)) | 0;
+  return `SET-${Math.abs(hash).toString(36)}`;
+}
+
 export function migrateStoredBank(items) {
   if (!Array.isArray(items)) return items;
-  return items.map((question) => {
+  const migrated = items.map((question) => {
     const subject = inferCourseSubject(question.source || question.subject);
-    if (!subject || (question.subject === subject && question.section === subject)) return question;
-    return { ...question, subject, section: subject };
+    return subject && (question.subject !== subject || question.section !== subject) ? { ...question, subject, section: subject } : question;
+  });
+  const counts = new Map();
+  migrated.forEach((question) => { const signature = sharedSetSignature(question); if (signature) counts.set(signature, (counts.get(signature) || 0) + 1); });
+  return migrated.map((question) => {
+    if (question.setId) return question;
+    const signature = sharedSetSignature(question);
+    return signature && counts.get(signature) > 1 ? { ...question, setId: signatureId(signature) } : question;
   });
 }
 
 function convertCourseFormat(payload) {
   const sectionContexts = [];
   if (Array.isArray(payload.sections)) {
-    payload.sections.forEach((section) => {
+    payload.sections.forEach((section, sectionIndex) => {
       const range = String(section.question_range || '').match(/(\d+)\s*-\s*(\d+)/);
       if (!range) return;
-      const ctx = { start: Number(range[1]), end: Number(range[2]), description: '', table: null };
+      const ctx = { start: Number(range[1]), end: Number(range[2]), description: '', table: null, setId: `COURSE-${payload.day || '0'}-SET-${sectionIndex + 1}` };
       if (section.context?.description) ctx.description = String(section.context.description);
       if (Array.isArray(section.context?.table) && section.context.table.length > 0) {
         const firstRow = section.context.table[0];
@@ -176,6 +210,7 @@ function convertCourseFormat(payload) {
       negativeMarks: 0.25,
       explanation: String(item.explanation || '').trim(),
       source: payload.course_title || 'Imported course JSON',
+      ...(sectionCtx && (passage || table) ? { setId: sectionCtx.setId } : {}),
       ...(table ? { table } : {}),
     };
   });
@@ -187,7 +222,7 @@ export function normalizeImportedBank(payload) {
   const source = Array.isArray(payload) ? payload : payload?.questions;
   if (!Array.isArray(source)) throw new Error('Expected a JSON array or an object with a questions array.');
   const ids = new Set();
-  return source.map((item, index) => {
+  const normalized = source.map((item, index) => {
     const type = item.type === 'descriptive' ? 'descriptive' : 'mcq';
     const question = String(item.question || '').trim();
     const options = Array.isArray(item.options) ? item.options.map((option) => String(option).trim()).filter(Boolean) : [];
@@ -210,10 +245,12 @@ export function normalizeImportedBank(payload) {
       marks: Math.max(0, Number(item.marks) || (type === 'mcq' ? 1 : 10)),
       negativeMarks: Math.max(0, Number(item.negativeMarks) || (type === 'mcq' ? 0.25 : 0)),
       source: String(item.source || 'Imported JSON'),
+      ...(String(item.setId || item.set_id || '').trim() ? { setId: String(item.setId || item.set_id).trim() } : {}),
       ...(table ? { table } : {}),
       ...(image ? { image } : {}),
     };
   });
+  return migrateStoredBank(normalized);
 }
 
 export function normalizeImportedTest(payload) {

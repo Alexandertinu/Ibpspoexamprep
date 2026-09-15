@@ -38,6 +38,13 @@ test('remembered API keys stay local and are excluded from backups', () => {
   assert.deepEqual(storage.loadAIKeys(), {});
 });
 
+test('mistake notebook mastery and notes are included in backups', () => {
+  const state = { q1: { mastered: true, note: 'Review ratio formula' } };
+  storage.saveMistakeState(state);
+  assert.deepEqual(storage.loadMistakeState(), state);
+  assert.deepEqual(storage.exportAll().mistakeState, state);
+});
+
 test('multiple tutor chats are stored in backups and can be cleared', () => {
   const chats = [
     { id: 'chat-1', title: 'Percentage analysis', messages: [{ role: 'user', content: 'Analyse my score' }] },
