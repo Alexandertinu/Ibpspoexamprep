@@ -42,7 +42,7 @@ Connect any AI platform that exposes one of these browser-accessible API formats
 
 No provider or model catalog is hard-coded. Enter the platform's endpoint and exact model ID, then choose bearer-token, custom-header or no authentication. An optional model-list endpoint can discover models when the platform exposes one.
 
-Save multiple connection profiles at the same time. Each profile can hold multiple discovered or manually entered model IDs, while its key remains only in session memory. The configured platform must permit browser CORS.
+Save multiple connection profiles at the same time. Each profile can hold multiple discovered or manually entered model IDs. Keys can remain session-only or, when the user opts in, be remembered in this app's origin-local browser storage. Remembered keys are never included in app backups. The configured platform must permit browser CORS.
 
 The dedicated **AI Tutor** is an exam-only teacher chat. It stores multiple named conversations locally, includes a focused fullscreen mode, renders Markdown tables and can use an attached question or completed attempt to explain concepts, teach faster methods, identify traps, improve question selection, review writing and prescribe measurable practice. Connection and model selectors inside the chat let you switch among every configured model without leaving the conversation.
 

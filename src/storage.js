@@ -6,6 +6,7 @@ const KEYS = {
   tests: 'po-prep-tests-v2',
   aiConfig: 'po-prep-ai-config-v1',
   aiProfiles: 'po-prep-ai-profiles-v1',
+  aiKeys: 'po-prep-ai-keys-v1',
   tutor: 'po-prep-tutor-v1',
   tutorChats: 'po-prep-tutor-chats-v1',
 };
@@ -53,6 +54,9 @@ export const storage = {
   saveAIConfig: (config) => write(KEYS.aiConfig, sanitizeConfig(config)),
   loadAIProfiles: () => (read(KEYS.aiProfiles, []) || []).map(sanitizeConfig),
   saveAIProfiles: (profiles) => write(KEYS.aiProfiles, (profiles || []).map(sanitizeConfig)),
+  loadAIKeys: () => read(KEYS.aiKeys, {}) || {},
+  saveAIKeys: (keys) => write(KEYS.aiKeys, keys || {}),
+  clearAIKeys: () => remove(KEYS.aiKeys),
   loadTutor: () => read(KEYS.tutor, []),
   saveTutor: (messages) => write(KEYS.tutor, messages),
   clearTutor: () => remove(KEYS.tutor),

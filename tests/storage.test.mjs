@@ -28,6 +28,16 @@ test('legacy tutor conversation can be saved, exported and cleared', () => {
   assert.deepEqual(storage.loadTutor(), []);
 });
 
+test('remembered API keys stay local and are excluded from backups', () => {
+  storage.saveAIKeys({ 'profile-1': 'secret-key-value' });
+  assert.deepEqual(storage.loadAIKeys(), { 'profile-1': 'secret-key-value' });
+  const backup = storage.exportAll();
+  assert.equal(backup.aiKeys, undefined);
+  assert.equal(JSON.stringify(backup).includes('secret-key-value'), false);
+  storage.clearAIKeys();
+  assert.deepEqual(storage.loadAIKeys(), {});
+});
+
 test('multiple tutor chats are stored in backups and can be cleared', () => {
   const chats = [
     { id: 'chat-1', title: 'Percentage analysis', messages: [{ role: 'user', content: 'Analyse my score' }] },
