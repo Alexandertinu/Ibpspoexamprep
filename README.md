@@ -10,8 +10,8 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - User-created subject compartments and chapters/topics
 - Any subject, topic or section name, including JSON-imported subjects and chapters
 - Reasoning, Quantitative Aptitude, English, General Awareness and Descriptive starter content
-- Custom tests that combine subjects, chapters and question types
-- Balanced chapter-by-chapter or fully random offline mock generation
+- Simple custom mock builder with chapter-based random selection or exact manual question selection
+- User-controlled test name, question count, duration and question shuffling
 - AI Tutor mock creation from the local catalog when explicitly requested
 - Question-specific marks and negative marks
 - Configurable duration and question count
