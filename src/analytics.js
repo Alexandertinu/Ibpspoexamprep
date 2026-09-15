@@ -53,7 +53,7 @@ function aggregate(rows, keyFn) {
   const map = new Map();
   rows.forEach((row) => {
     const key = keyFn(row) || 'Uncategorized';
-    if (!map.has(key)) map.set(key, { name: key, total: 0, correct: 0, wrong: 0, skipped: 0, pending: 0, graded: 0, activeMs: 0, score: 0, maxScore: 0 });
+    if (!map.has(key)) map.set(key, { name: key, total: 0, correct: 0, wrong: 0, skipped: 0, pending: 0, graded: 0, activeMs: 0, timedQuestions: 0, score: 0, maxScore: 0 });
     const item = map.get(key);
     item.total += 1;
     if (row.status === 'Correct') item.correct += 1;
@@ -64,12 +64,13 @@ function aggregate(rows, keyFn) {
     item.score += Number(row.awardedMarks || 0);
     item.maxScore += Number(row.question.marks || 0);
     item.activeMs += row.activeMs || 0;
+    if ((row.activeMs || 0) > 0 || (row.visits || 0) > 0) item.timedQuestions += 1;
   });
   return [...map.values()].map((item) => ({
     ...item,
     attempted: item.correct + item.wrong + item.pending + item.graded,
     accuracy: item.correct + item.wrong ? Math.round((item.correct / (item.correct + item.wrong)) * 100) : 0,
-    averageSeconds: item.total ? Math.round(item.activeMs / item.total / 1000) : 0,
+    averageSeconds: item.timedQuestions ? Math.round(item.activeMs / item.timedQuestions / 1000) : 0,
   }));
 }
 
@@ -87,7 +88,7 @@ export function buildAnalytics({ questions, answers = {}, grades = {}, timeByQue
   const totalActiveMs = rows.reduce((sum, row) => sum + row.activeMs, 0);
   return {
     ...score, rows, totalActiveMs, totalActiveSeconds: Math.round(totalActiveMs / 1000),
-    averageSeconds: rows.length ? Math.round(totalActiveMs / rows.length / 1000) : 0,
+    averageSeconds: rows.some((row) => row.activeMs > 0 || row.visits > 0) ? Math.round(totalActiveMs / rows.filter((row) => row.activeMs > 0 || row.visits > 0).length / 1000) : 0,
     bySubject: aggregate(rows, (row) => row.question.subject), byTopic: aggregate(rows, (row) => row.question.topic),
     slowest: [...rows].sort((a, b) => b.activeMs - a.activeMs).slice(0, Math.min(5, rows.length)),
     totalVisits: rows.reduce((sum, row) => sum + row.visits, 0), totalAnswerChanges: rows.reduce((sum, row) => sum + row.answerChanges, 0),

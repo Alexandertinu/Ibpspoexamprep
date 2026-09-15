@@ -25,6 +25,12 @@ test('mistake notebook keeps wrong questions and recognizes later improvement', 
   assert.equal(entry.note, 'Review ratios');
 });
 
+test('a newer mistake reopens a previously mastered question', () => {
+  const notebook = buildMistakeNotebook(attempts, { q1: { mastered: true, masteredAt: '2026-08-01T00:00:00Z' } });
+  assert.equal(notebook[0].mastered, false);
+  assert.equal(notebook[0].reopenedAfterMastery, true);
+});
+
 test('mistake notebook counts repeated wrong and skipped attempts', () => {
   const extra = { id: 'a3', title: 'Ratio 3', completedAt: '2026-09-03T00:00:00Z', analytics: { bySubject: [], rows: [{ question, status: 'Skipped', activeSeconds: 10 }, { question: { ...question, id: 'q2' }, status: 'Wrong', activeSeconds: 50 }] } };
   const notebook = buildMistakeNotebook([...attempts, extra]);

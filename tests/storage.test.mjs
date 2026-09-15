@@ -10,6 +10,23 @@ test('storage falls back to memory when browser localStorage is unavailable', ()
   assert.deepEqual(storage.loadAttempts(), []);
 });
 
+test('failed persistent writes prefer fresh in-memory data over stale localStorage', () => {
+  const original = globalThis.localStorage;
+  const data = new Map([['po-prep-bank-v1', JSON.stringify([{ id: 'old' }])]]);
+  globalThis.localStorage = {
+    getItem: (key) => data.get(key) ?? null,
+    setItem: () => { throw new Error('Quota exceeded'); },
+    removeItem: (key) => data.delete(key),
+  };
+  try {
+    storage.saveBank([{ id: 'new' }]);
+    assert.deepEqual(storage.loadBank(), [{ id: 'new' }]);
+    assert.deepEqual(storage.exportAll().bank, [{ id: 'new' }]);
+  } finally {
+    if (original === undefined) delete globalThis.localStorage; else globalThis.localStorage = original;
+  }
+});
+
 test('AI credentials are stripped from saved configuration and backups', () => {
   storage.saveAIConfig({ provider: 'openai', baseUrl: 'https://example.com/v1', model: 'x', apiKey: 'test', token: 'test2' });
   assert.equal(storage.loadAIConfig().apiKey, undefined);

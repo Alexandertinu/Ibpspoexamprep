@@ -67,10 +67,15 @@ export function buildMistakeNotebook(attempts, state = {}) {
     });
   });
 
-  return [...entries.values()].map((entry) => ({
-    ...entry,
-    mastered: Boolean(state[entry.questionId]?.mastered),
-    note: String(state[entry.questionId]?.note || ''),
-    improved: entry.latestStatus === 'Correct',
-  })).sort((a, b) => Number(a.mastered) - Number(b.mastered) || new Date(b.lastMistakeAt || 0) - new Date(a.lastMistakeAt || 0));
+  return [...entries.values()].map((entry) => {
+    const saved = state[entry.questionId] || {};
+    const mastered = Boolean(saved.mastered) && (!saved.masteredAt || new Date(entry.lastMistakeAt || 0) <= new Date(saved.masteredAt));
+    return {
+      ...entry,
+      mastered,
+      reopenedAfterMastery: Boolean(saved.mastered) && !mastered,
+      note: String(saved.note || ''),
+      improved: entry.latestStatus === 'Correct',
+    };
+  }).sort((a, b) => Number(a.mastered) - Number(b.mastered) || new Date(b.lastMistakeAt || 0) - new Date(a.lastMistakeAt || 0));
 }

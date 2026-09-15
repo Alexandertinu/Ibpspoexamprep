@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFile(resolve(root, path), 'utf8');
-const stripExports = (source) => source.replace(/\bexport\s+/g, '');
+const stripExports = (source) => source.replace(/^\s*export\s+(?=(?:async\s+)?(?:const|let|var|function|class)\b)/gm, '');
 const stripImports = (source) => source.replace(/^import .*;\s*$/gm, '');
 
 const [styles, analytics, questions, storage, markdown, review, reviewAI, mockBuilder, progress, ai, app] = await Promise.all([

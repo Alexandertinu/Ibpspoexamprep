@@ -75,11 +75,16 @@ function bytesToBase64(buffer) {
 export async function fileToAttachment(file) {
   if (!file) return null;
   if (file.size > 12 * 1024 * 1024) throw new Error('Choose a file smaller than 12 MB for direct browser upload.');
-  const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'text/plain');
-  if (mimeType.startsWith('text/') || file.name.match(/\.(md|csv|json)$/i)) {
-    return { name: file.name, mimeType, text: await file.text() };
+  const name = String(file.name || 'attachment');
+  const extension = name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] || '';
+  const inferred = ({ pdf:'application/pdf', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', gif:'image/gif', webp:'image/webp', svg:'image/svg+xml', txt:'text/plain', md:'text/markdown', csv:'text/csv', json:'application/json' })[extension] || '';
+  const mimeType = !file.type || file.type === 'application/octet-stream' ? inferred : file.type;
+  if (!mimeType) throw new Error('The browser could not identify this file type. Use PDF, image, text, Markdown, CSV or JSON.');
+  if (mimeType.startsWith('text/') || ['application/json','image/svg+xml'].includes(mimeType)) {
+    return { name, mimeType, text: await file.text() };
   }
-  return { name: file.name, mimeType, base64: bytesToBase64(await file.arrayBuffer()) };
+  if (mimeType !== 'application/pdf' && !mimeType.startsWith('image/')) throw new Error(`Unsupported file type: ${mimeType}.`);
+  return { name, mimeType, base64: bytesToBase64(await file.arrayBuffer()) };
 }
 
 function geminiEndpoint(config) {
@@ -171,20 +176,36 @@ export async function callAI({ config, apiKey, prompt, attachment = null, timeou
 
 export function parseJSONResponse(text) {
   const cleaned = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
-  const start = Math.min(...['[', '{'].map((char) => {
-    const index = cleaned.indexOf(char);
-    return index < 0 ? Infinity : index;
-  }));
-  if (!Number.isFinite(start)) throw new Error('The model did not return JSON.');
-  const candidate = cleaned.slice(start);
-  try { return JSON.parse(candidate); } catch {
-    const objectEnd = candidate.lastIndexOf('}');
-    const arrayEnd = candidate.lastIndexOf(']');
-    const end = Math.max(objectEnd, arrayEnd);
-    if (end < 0) throw new Error('The model returned incomplete JSON.');
-    try { return JSON.parse(candidate.slice(0, end + 1)); }
-    catch { throw new Error('The model response could not be parsed as valid JSON. Ask it to return JSON only.'); }
+  const starts = [...cleaned].map((char, index) => ['[', '{'].includes(char) ? index : -1).filter((index) => index >= 0);
+  if (!starts.length) throw new Error('The model did not return JSON.');
+  let sawIncomplete = false;
+  for (const start of starts) {
+    const opening = cleaned[start];
+    const closing = opening === '{' ? '}' : ']';
+    let depth = 0, inString = false, escaped = false, closed = false;
+    for (let index = start; index < cleaned.length; index += 1) {
+      const char = cleaned[index];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (char === '\\') escaped = true;
+        else if (char === '"') inString = false;
+        continue;
+      }
+      if (char === '"') { inString = true; continue; }
+      if (char === opening) depth += 1;
+      else if (char === closing) {
+        depth -= 1;
+        if (depth === 0) {
+          closed = true;
+          try { return JSON.parse(cleaned.slice(start, index + 1)); }
+          catch { break; }
+        }
+      }
+    }
+    if (!closed) sawIncomplete = true;
   }
+  if (sawIncomplete) throw new Error('The model returned incomplete JSON.');
+  throw new Error('The model response could not be parsed as valid JSON. Ask it to return JSON only.');
 }
 
 export function paperConversionPrompt({ defaultSubject = 'Reasoning Ability', instructions = '' } = {}) {

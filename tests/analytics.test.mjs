@@ -33,6 +33,13 @@ test('buildAnalytics aggregates active time, visits, changes and topics', () => 
   assert.equal(result.rows[2].marked, true);
 });
 
+test('average time uses visited questions instead of unvisited zero-time items', () => {
+  const result = buildAnalytics({ questions, timeByQuestion: { 0: 60000 }, visits: { 0: 1 } });
+  assert.equal(result.averageSeconds, 60);
+  assert.equal(result.bySubject.find((item) => item.name === 'Reasoning Ability').averageSeconds, 60);
+  assert.equal(result.bySubject.find((item) => item.name === 'Quantitative Aptitude').averageSeconds, 0);
+});
+
 test('coach packet contains per-question response and timing data', () => {
   const analytics = buildAnalytics({ questions, answers: { 0: 0 }, timeByQuestion: { 0: 9000 } });
   const packet = buildCoachPacket({ title: 'Mock', completedAt: '2026-01-01', elapsedSeconds: 30 }, analytics);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, shuffleQuestionSets, starterBank } from '../src/questions.js';
+import { completeQuestionSets, migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, shuffleQuestionSets, starterBank } from '../src/questions.js';
 
 test('starter bank has unique valid ids and supports four subjects plus descriptive', () => {
   const ids = new Set();
@@ -28,6 +28,14 @@ test('normalizer accepts arbitrary subjects and descriptive questions', () => {
 
 test('normalizer rejects objective questions with invalid keys', () => {
   assert.throws(() => normalizeImportedBank([{ question: 'Bad', options: ['A', 'B'], answer: 5 }]), /invalid zero-based answer/);
+});
+
+test('normalizer rejects blank MCQ keys and unsafe IDs while preserving zero values', () => {
+  assert.throws(() => normalizeImportedBank([{ id: 'bad id', question: 'Bad ID', options: ['A', 'B'], answer: 0 }]), /Question ID/);
+  assert.throws(() => normalizeImportedBank([{ question: 'No key', options: ['A', 'B'], answer: null }]), /invalid zero-based answer/);
+  const [question] = normalizeImportedBank([{ id: 'safe-id', question: 'Zero values', options: ['A', 'B'], answer: 0, marks: 0, negativeMarks: 0 }]);
+  assert.equal(question.marks, 0);
+  assert.equal(question.negativeMarks, 0);
 });
 
 test('normalizer preserves table data on questions', () => {
@@ -97,7 +105,7 @@ test('normalizeImportedTest accepts course format with letter-keyed options and 
       { section_name: 'Simplification', question_range: '3-3' },
     ],
     questions: [
-      { question_number: 1, type: 'Data Interpretation', question: 'What is total sales?', options: { a: '200', b: '300', c: '400' }, correct_answer: 'b', explanation: 'Add them.' },
+      { question_number: 1, type: 'Data Interpretation', question: 'What is total sales?', options: { A: '200', B: '300', C: '400' }, correct_answer: 'B', explanation: 'Add them.' },
       { question_number: 2, type: 'Data Interpretation', question: 'What is North sales?', options: { a: '50', b: '100', c: '150' }, correct_answer: 'b', explanation: 'From table.' },
       { question_number: 3, type: 'Simplification', question: '2+2=?', options: { a: '3', b: '4', c: '5' }, correct_answer: 'b', explanation: 'Math.' },
     ],
@@ -152,6 +160,12 @@ test('shuffleQuestionSets keeps shared DI or puzzle questions together', () => {
   assert.ok(ids.indexOf('b1') < ids.indexOf('b2'));
 });
 
+test('completeQuestionSets expands a partial selection to the whole DI or puzzle set', () => {
+  const source = [{ id: 's1', setId: 'set-1' }, { id: 's2', setId: 'set-1' }, { id: 's3', setId: 'set-1' }, { id: 'single' }];
+  assert.deepEqual(completeQuestionSets(source.slice(0, 2), source).map((item) => item.id), ['s1', 's2', 's3']);
+  assert.deepEqual(completeQuestionSets([source[3]], source).map((item) => item.id), ['single']);
+});
+
 test('normalizer preserves explicit set IDs and infers repeated shared contexts', () => {
   const questions = normalizeImportedBank({ questions: [
     { id: 'q1', question: 'First?', options: ['A', 'B'], answer: 0, subject: 'Reasoning Ability', topic: 'Puzzle', passage: 'Shared clues' },
@@ -161,6 +175,10 @@ test('normalizer preserves explicit set IDs and infers repeated shared contexts'
   assert.ok(questions[0].setId);
   assert.equal(questions[0].setId, questions[1].setId);
   assert.equal(questions[2].setId, 'manual-set');
+});
+
+test('course format rejects an answer key that does not match an option', () => {
+  assert.throws(() => normalizeImportedTest({ course_title: 'Quantitative Aptitude Course', day: 1, sections: [], questions: [{ question_number: 1, type: 'Arithmetic', question: 'Bad key?', options: { A: '1', B: '2' }, correct_answer: 'C' }] }), /does not match its option keys/);
 });
 
 test('normalizeImportedTest rejects course format with no questions', () => {

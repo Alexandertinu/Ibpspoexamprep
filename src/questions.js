@@ -96,6 +96,37 @@ export function shuffleQuestionSets(items, enabled = true, random = () => crypto
   return shuffleItems(groups, true, random).flat();
 }
 
+const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/;
+
+function normalizeId(value, fallback, label = 'Question ID') {
+  const id = String(value || fallback).trim();
+  if (!SAFE_ID.test(id)) throw new Error(`${label} may use only letters, numbers, dots, underscores, colons and hyphens.`);
+  return id;
+}
+
+function numericField(value, fallback, label) {
+  const number = value === undefined || value === null || value === '' ? fallback : Number(value);
+  if (!Number.isFinite(number) || number < 0) throw new Error(`${label} must be a non-negative number.`);
+  return number;
+}
+
+export function completeQuestionSets(selected, source) {
+  const sourceBySet = new Map();
+  (source || []).forEach((question) => { if (question.setId) { if (!sourceBySet.has(question.setId)) sourceBySet.set(question.setId, []); sourceBySet.get(question.setId).push(question); } });
+  const output = [];
+  const addedIds = new Set();
+  const addedSets = new Set();
+  (selected || []).forEach((question) => {
+    if (question.setId && !addedSets.has(question.setId)) {
+      addedSets.add(question.setId);
+      (sourceBySet.get(question.setId) || [question]).forEach((item) => { if (!addedIds.has(item.id)) { output.push(item); addedIds.add(item.id); } });
+    } else if (!question.setId && !addedIds.has(question.id)) {
+      output.push(question); addedIds.add(question.id);
+    }
+  });
+  return output;
+}
+
 export function normalizeTable(table) {
   if (!table) return null;
   const caption = String(table.caption || '').trim();
@@ -186,10 +217,12 @@ function convertCourseFormat(payload) {
   const questions = payload.questions.map((item, index) => {
     const qNum = Number(item.question_number || index + 1);
     const optionsObj = item.options || {};
-    const optionKeys = Object.keys(optionsObj).sort();
-    const options = optionKeys.map((key) => String(optionsObj[key]).trim()).filter(Boolean);
+    const optionEntries = Object.entries(optionsObj).map(([key, value]) => [String(key).trim().toLowerCase(), String(value).trim()]).filter(([, value]) => value).sort(([a], [b]) => a.localeCompare(b));
+    const optionKeys = optionEntries.map(([key]) => key);
+    const options = optionEntries.map(([, value]) => value);
     const correctLetter = String(item.correct_answer || '').trim().toLowerCase();
     const answerIndex = optionKeys.indexOf(correctLetter);
+    if (answerIndex < 0) throw new Error(`Question ${qNum} has a correct answer that does not match its option keys.`);
     const questionType = String(item.type || '').trim();
     const sectionCtx = sectionContexts.find((ctx) => qNum >= ctx.start && qNum <= ctx.end);
     const passage = sectionCtx?.description || '';
@@ -205,7 +238,7 @@ function convertCourseFormat(payload) {
       passage: passage,
       question: String(item.question || '').trim(),
       options,
-      answer: answerIndex >= 0 ? answerIndex : 0,
+      answer: answerIndex,
       marks: 1,
       negativeMarks: 0.25,
       explanation: String(item.explanation || '').trim(),
@@ -226,8 +259,9 @@ export function normalizeImportedBank(payload) {
     const type = item.type === 'descriptive' ? 'descriptive' : 'mcq';
     const question = String(item.question || '').trim();
     const options = Array.isArray(item.options) ? item.options.map((option) => String(option).trim()).filter(Boolean) : [];
-    const answer = type === 'mcq' ? Number(item.answer) : null;
-    const id = String(item.id || `IMP-${Date.now()}-${index + 1}`);
+    const rawAnswer = item.answer;
+    const answer = type === 'mcq' && rawAnswer !== null && rawAnswer !== undefined && String(rawAnswer).trim() !== '' ? Number(rawAnswer) : null;
+    const id = normalizeId(item.id, `IMP-${Date.now()}-${index + 1}`);
     if (!question) throw new Error(`Question ${index + 1} has no question text.`);
     if (type === 'mcq' && (options.length < 2 || options.length > 6)) throw new Error(`Question ${index + 1} must have 2–6 options.`);
     if (type === 'mcq' && (!Number.isInteger(answer) || answer < 0 || answer >= options.length)) throw new Error(`Question ${index + 1} has an invalid zero-based answer index.`);
@@ -242,10 +276,10 @@ export function normalizeImportedBank(payload) {
       explanation: String(item.explanation || ''), modelAnswer: String(item.modelAnswer || ''),
       rubric: Array.isArray(item.rubric) ? item.rubric.map(String) : [], wordLimit: Math.max(0, Number(item.wordLimit) || 0),
       passage: item.passage ? String(item.passage) : '', difficulty: String(item.difficulty || 'Prelims'),
-      marks: Math.max(0, Number(item.marks) || (type === 'mcq' ? 1 : 10)),
-      negativeMarks: Math.max(0, Number(item.negativeMarks) || (type === 'mcq' ? 0.25 : 0)),
+      marks: numericField(item.marks, type === 'mcq' ? 1 : 10, `Question ${index + 1} marks`),
+      negativeMarks: numericField(item.negativeMarks, type === 'mcq' ? 0.25 : 0, `Question ${index + 1} negative marks`),
       source: String(item.source || 'Imported JSON'),
-      ...(String(item.setId || item.set_id || '').trim() ? { setId: String(item.setId || item.set_id).trim() } : {}),
+      ...(String(item.setId || item.set_id || '').trim() ? { setId: normalizeId(item.setId || item.set_id, '', 'Set ID') } : {}),
       ...(table ? { table } : {}),
       ...(image ? { image } : {}),
     };

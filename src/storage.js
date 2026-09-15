@@ -13,8 +13,10 @@ const KEYS = {
 };
 
 const memoryFallback = new Map();
+const volatileKeys = new Set();
 
 function read(key, fallback) {
+  if (volatileKeys.has(key) && memoryFallback.has(key)) return memoryFallback.get(key);
   try {
     const raw = localStorage.getItem(key);
     if (raw !== null) return JSON.parse(raw);
@@ -24,11 +26,13 @@ function read(key, fallback) {
 
 function write(key, value) {
   memoryFallback.set(key, value);
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* continue in memory */ }
+  try { localStorage.setItem(key, JSON.stringify(value)); volatileKeys.delete(key); return true; }
+  catch { volatileKeys.add(key); return false; }
 }
 
 function remove(key) {
   memoryFallback.delete(key);
+  volatileKeys.delete(key);
   try { localStorage.removeItem(key); } catch { /* continue in memory */ }
 }
 
@@ -39,6 +43,7 @@ function sanitizeConfig(config) {
 }
 
 export const storage = {
+  hasPersistenceIssue: () => volatileKeys.size > 0,
   loadBank: () => read(KEYS.bank, null),
   saveBank: (bank) => write(KEYS.bank, bank),
   loadAttempts: () => read(KEYS.attempts, []),

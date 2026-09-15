@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { callAI, discoverModels, parseJSONResponse, providerDefaults, validateAIConfig } from '../src/ai.js';
+import { callAI, discoverModels, fileToAttachment, parseJSONResponse, providerDefaults, validateAIConfig } from '../src/ai.js';
 
 test('AI config accepts arbitrary HTTPS endpoints and model IDs', () => {
   const config = validateAIConfig({ provider: 'openai', baseUrl: 'https://example.com/v1/', model: 'any/custom-model', authMode: 'bearer' });
@@ -32,8 +32,20 @@ test('model discovery supports a custom endpoint and custom key header', async (
   } finally { globalThis.fetch=originalFetch; }
 });
 
+test('file attachment detection handles uppercase PDF and missing image MIME types', async () => {
+  const pdf = await fileToAttachment({ name: 'PAPER.PDF', type: '', size: 3, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer });
+  const image = await fileToAttachment({ name: 'chart.PNG', type: '', size: 3, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer });
+  const octetPdf = await fileToAttachment({ name: 'paper.pdf', type: 'application/octet-stream', size: 3, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer });
+  assert.equal(pdf.mimeType, 'application/pdf');
+  assert.equal(image.mimeType, 'image/png');
+  assert.equal(octetPdf.mimeType, 'application/pdf');
+  await assert.rejects(() => fileToAttachment({ name: 'unknown.bin', type: '', size: 3 }), /could not identify/);
+});
+
 test('JSON parser accepts fenced model output', () => {
   assert.deepEqual(parseJSONResponse('```json\n{"questions":[]}\n```'), { questions: [] });
+  assert.deepEqual(parseJSONResponse('{"questions":[]}\nHere is why [done]'), { questions: [] });
+  assert.deepEqual(parseJSONResponse('Note [draft] — final data: {"questions":[]}'), { questions: [] });
 });
 
 test('Chat Completions format sends an arbitrary model with bearer authentication', async () => {
