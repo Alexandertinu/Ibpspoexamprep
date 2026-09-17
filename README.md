@@ -111,7 +111,7 @@ See `question-bank-template.json`. Key rules:
 - `marks` and `negativeMarks`: numeric values per question
 - `section`: controls the tab shown in exam mode
 - descriptive questions may include `modelAnswer`, `wordLimit` and `rubric`
-- `table` (optional): structured data rendered as an HTML table in the exam — `{ "caption": "...", "headers": ["col1", "col2"], "rows": [["a", "b"]] }`
+- `table` (optional): unsolved question data rendered as an HTML table — `{ "role": "prompt", "caption": "...", "headers": ["col1", "col2"], "rows": [["a", "b"]] }`. Never place final arrangements, decoded tables or other solution material in question media.
 - `image` (optional): diagram or chart rendered in the exam — `{ "src": "https://… or data:image/…", "alt": "description", "caption": "optional" }`
 
 ## Mock-test import (no AI needed)

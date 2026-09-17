@@ -46,6 +46,14 @@ test('normalizer preserves table data on questions', () => {
   assert.deepEqual(question.table.rows, [['North', '100'], ['South', '200']]);
 });
 
+test('normalizer removes answer-revealing reasoning tables but keeps explicit prompt tables', () => {
+  const base = { question: 'Who sits at the end?', options: ['A', 'B'], answer: 0, subject: 'Reasoning Ability', topic: 'Seating Arrangement', explanation: 'From the final arrangement, A is at the end.' };
+  const [hidden] = normalizeImportedBank([{ ...base, id: 'solution-table', table: { caption: 'Final Seating Arrangement', headers: ['Seat', 'Person'], rows: [['1', 'A']] } }]);
+  const [visible] = normalizeImportedBank([{ ...base, id: 'prompt-table', table: { role: 'prompt', caption: 'Information Given', headers: ['Seat', 'Person'], rows: [['1', '?']] } }]);
+  assert.equal(hidden.table, undefined);
+  assert.ok(visible.table);
+});
+
 test('normalizer preserves image data on questions', () => {
   const [question] = normalizeImportedBank([{ question: 'See the chart.', options: ['A', 'B'], answer: 1, image: { src: 'https://example.com/chart.png', alt: 'Revenue chart', caption: 'Q1 revenue' } }]);
   assert.ok(question.image);

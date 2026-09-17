@@ -25,6 +25,7 @@
       "difficulty": "Prelims",
       "passage": "Study the table and answer the question.",
       "table": {
+        "role": "prompt",
         "caption": "Sales data for five branches",
         "headers": ["Branch", "Q1 Sales", "Q2 Sales", "% Growth"],
         "rows": [

@@ -129,6 +129,7 @@ export function completeQuestionSets(selected, source) {
 
 export function normalizeTable(table) {
   if (!table) return null;
+  const role = ['prompt', 'question', 'solution', 'answer'].includes(String(table.role || '').toLowerCase()) ? String(table.role).toLowerCase() : '';
   const caption = String(table.caption || '').trim();
   const headers = Array.isArray(table.headers) ? table.headers.map((cell) => String(cell ?? '')) : [];
   const rows = Array.isArray(table.rows) ? table.rows.map((row) => (Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : [])) : [];
@@ -136,7 +137,21 @@ export function normalizeTable(table) {
   const cols = Math.max(headers.length, ...rows.map((row) => row.length), 0);
   if (!cols) return null;
   const pad = (cells) => [...cells, ...Array(Math.max(0, cols - cells.length)).fill('')];
-  return { caption, headers: pad(headers), rows: rows.map(pad) };
+  return { ...(role ? { role } : {}), caption, headers: pad(headers), rows: rows.map(pad) };
+}
+
+export function isAnswerRevealingMedia(item, media) {
+  if (!media) return false;
+  const role = String(media.role || '').toLowerCase();
+  if (role === 'prompt' || role === 'question') return false;
+  if (role === 'solution' || role === 'answer') return true;
+  const topic = String(item.topic || '').toLowerCase();
+  const caption = String(media.caption || media.title || '').toLowerCase();
+  const explanation = String(item.explanation || '').toLowerCase();
+  const reasoningSet = /puzzle|coding|seating|arrangement|classification|ordering/.test(topic);
+  const solvedCaption = /final|decoded|solution|answer|arrangement|distribution/.test(caption);
+  const solvedExplanation = /final arrangement|decoded table|solved arrangement|answer table/.test(explanation);
+  return reasoningSet && (solvedCaption || solvedExplanation);
 }
 
 export function normalizeImage(image) {
@@ -144,7 +159,8 @@ export function normalizeImage(image) {
   const src = String(image.src || image.url || image.data || '').trim();
   if (!src) return null;
   if (!/^(data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,|https?:\/\/|\/|\.{1,2}\/)/i.test(src)) return null;
-  return { src, alt: String(image.alt || image.caption || 'Question diagram').trim(), caption: String(image.caption || '').trim() };
+  const role = ['prompt', 'question', 'solution', 'answer'].includes(String(image.role || '').toLowerCase()) ? String(image.role).toLowerCase() : '';
+  return { ...(role ? { role } : {}), src, alt: String(image.alt || image.caption || 'Question diagram').trim(), caption: String(image.caption || '').trim() };
 }
 
 function isCourseFormat(payload) {
@@ -176,7 +192,10 @@ export function migrateStoredBank(items) {
   if (!Array.isArray(items)) return items;
   const migrated = items.map((question) => {
     const subject = inferCourseSubject(question.source || question.subject);
-    return subject && (question.subject !== subject || question.section !== subject) ? { ...question, subject, section: subject } : question;
+    const next = subject && (question.subject !== subject || question.section !== subject) ? { ...question, subject, section: subject } : { ...question };
+    if (isAnswerRevealingMedia(next, next.table)) delete next.table;
+    if (isAnswerRevealingMedia(next, next.image)) delete next.image;
+    return next;
   });
   const counts = new Map();
   migrated.forEach((question) => { const signature = sharedSetSignature(question); if (signature) counts.set(signature, (counts.get(signature) || 0) + 1); });
@@ -268,8 +287,8 @@ export function normalizeImportedBank(payload) {
     if (ids.has(id)) throw new Error(`Duplicate question id: ${id}`);
     ids.add(id);
     const subject = String(item.subject || 'General Awareness').trim();
-    const table = normalizeTable(item.table);
-    const image = normalizeImage(item.image);
+    const table = isAnswerRevealingMedia(item, item.table) ? null : normalizeTable(item.table);
+    const image = isAnswerRevealingMedia(item, item.image) ? null : normalizeImage(item.image);
     return {
       id, type, subject, section: String(item.section || subject), topic: String(item.topic || 'Imported'), question,
       options: type === 'mcq' ? options : [], answer,

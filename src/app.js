@@ -272,7 +272,7 @@ function updateAttempt(changes){Object.assign(currentAttempt,changes);attempts=a
 async function copyAttemptPrompt(){const status=document.querySelector('#attempt-status');if(currentAttempt.isTestRun){status.textContent='This attempt is marked as a UI test; no coaching prompt was created.';return;}try{await copyText(buildCoachPrompt(buildCoachPacket(currentAttempt,currentAttempt.analytics)));status.textContent='Prompt copied. Paste it into any model.';}catch{status.textContent='Clipboard failed. Download the packet instead.';}}
 function showGradeModal(index){const row=currentAttempt.analytics.rows[index];openModal(`<div class="modal-head"><span>Grade descriptive response</span><button class="btn small" data-close>Close</button></div><div class="modal-body"><p><b>${escapeHTML(row.question.question)}</b></p><div class="notice">Maximum marks: ${row.question.marks}. Word count: ${wordCount(row.selected)}.</div><p style="white-space:pre-wrap">${escapeHTML(row.selected)}</p><div class="field"><label>Marks awarded</label><input id="grade-score" type="number" min="0" max="${row.question.marks}" step="0.5" value="${row.grade?.score||0}"></div><div class="field"><label>Feedback</label><textarea id="grade-feedback">${escapeHTML(row.grade?.feedback||'')}</textarea></div></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="save-grade">Save grade</button></div>`);document.querySelector('#save-grade').addEventListener('click',()=>{const grades={...(currentAttempt.grades||{}),[index]:{score:Number(document.querySelector('#grade-score').value),feedback:document.querySelector('#grade-feedback').value}};const raw=currentAttempt.raw;if(!raw)return showToast('Raw response data is unavailable for this legacy attempt.','warn');const analytics=buildAnalytics({...raw,grades});updateAttempt({grades,analytics});closeModal({resume:false});renderAttempt();});}
 
-function guideQuestionTemplate(){return{questions:[{id:'Q001',type:'mcq',subject:'Quantitative Aptitude',section:'Quantitative Aptitude',topic:'Data Interpretation',passage:'Read the table and answer the question.',table:{caption:'Sample table',headers:['Item','Value'],rows:[['A','120'],['B','180']]},question:'What is the total value?',options:['200','250','300','350','400'],answer:2,marks:1,negativeMarks:.25,explanation:'120 + 180 = 300.'}]};}
+function guideQuestionTemplate(){return{questions:[{id:'Q001',type:'mcq',subject:'Quantitative Aptitude',section:'Quantitative Aptitude',topic:'Data Interpretation',passage:'Read the table and answer the question.',table:{role:'prompt',caption:'Sample table',headers:['Item','Value'],rows:[['A','120'],['B','180']]},question:'What is the total value?',options:['200','250','300','350','400'],answer:2,marks:1,negativeMarks:.25,explanation:'120 + 180 = 300.'}]};}
 function guideMockTemplate(){return{test:{title:'Quantitative Aptitude Mock 1',description:'Practice test',durationMinutes:20,shuffle:true,questions:guideQuestionTemplate().questions}};}
 function pdfToMockPrompt(){return`Convert the attached exam PDF into a JSON mock test for the Prep Studio app.
 
@@ -280,7 +280,8 @@ IMPORTANT OUTPUT RULES
 - Return JSON only. Do not add an explanation or Markdown code block.
 - Read every question and answer carefully.
 - Do not guess a missing answer. Leave out a question if its correct answer is not available.
-- Keep all numbers, options, tables and answer keys exactly as shown in the PDF.
+- Keep all numbers, options, question tables and answer keys exactly as shown in the PDF.
+- Never put a solved arrangement, decoded-word table, final answer table, solution diagram or any other answer-revealing content in passage, table or image. Keep those details only in explanation.
 
 USE THIS EXACT STRUCTURE
 {
@@ -300,6 +301,7 @@ USE THIS EXACT STRUCTURE
         "difficulty": "Prelims",
         "passage": "Directions or shared information",
         "table": {
+          "role": "prompt",
           "caption": "Table title",
           "headers": ["Column 1", "Column 2"],
           "rows": [["Value 1", "Value 2"]]
@@ -322,7 +324,7 @@ QUESTION RULES
 - For a single-subject mock, use the same subject and section on every question. Put labels such as Data Interpretation, Arithmetic and Simplification in topic, not section.
 - Copy shared directions, passages and table data into every question that needs them.
 - Give every question from the same DI, puzzle or passage set the same setId. Leave setId out for standalone questions.
-- Convert visible tables into table.headers and table.rows.
+- Convert only tables that are part of the question into table.headers and table.rows, and set table.role to "prompt".
 - For a graph or chart, copy its exact values into a table when possible. Never invent values that are not visible.
 - Remove the table field when a question does not need a table.
 - For descriptive questions, use an empty options array, answer null, negativeMarks 0, and include modelAnswer, wordLimit and rubric.
@@ -339,10 +341,11 @@ Rules:
 5. Use one common section name for a single-subject exam. Move labels such as DI, Arithmetic, Simplification and Number Series into topic.
 6. Keep shared directions and tables with every question that uses them.
 7. Give questions from the same DI, puzzle or passage set the same setId. Remove setId from standalone questions.
-8. Convert an array of table objects into table.headers and table.rows.
-9. Give every question a unique ID.
-10. Keep the original question, options, numbers, correct answer and explanation. Do not invent missing information.
-11. Check every answer after conversion.
+8. Remove solved arrangements, decoded-word tables, final-answer tables and solution diagrams from question passage, table and image. Keep them only in explanation.
+9. Convert a real question-data table into table.headers and table.rows and set table.role to "prompt".
+10. Give every question a unique ID.
+11. Keep the original question, options, numbers, correct answer and explanation. Do not invent missing information.
+12. Check every answer after conversion.
 
 JSON TO FIX:
 [PASTE YOUR JSON HERE]`;}
