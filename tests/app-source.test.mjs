@@ -27,6 +27,10 @@ test('the final exam question opens submit review instead of navigating to itsel
   assert.match(source, /if\(state\.current===state\.questions\.length-1\)showSubmit\(\)/);
 });
 
+test('resumed unfinished tests also run through the media safety migration', () => {
+  assert.match(source, /questions:migrateStoredBank\(saved\.questions\)/);
+});
+
 test('desktop exam layout constrains scrolling to the question pane', () => {
   assert.match(styles, /\.cbt\{[^}]*height:100vh;[^}]*overflow:hidden/);
   assert.match(styles, /\.question-pane\{[^}]*min-height:0;[^}]*overflow:hidden/);
