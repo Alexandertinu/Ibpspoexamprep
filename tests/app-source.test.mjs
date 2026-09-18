@@ -39,6 +39,11 @@ test('desktop exam layout constrains scrolling to the question pane', () => {
   assert.match(styles, /\.exam-foot\{[^}]*flex:0 0 48px/);
 });
 
+test('performance trend offers five metrics and an all-graphs view', () => {
+  for (const label of ['Accuracy', 'Marks obtained', 'Correct questions', 'Wrong questions', 'Skipped questions', 'All graphs']) assert.ok(source.includes(label), `missing trend control: ${label}`);
+  assert.match(source, /trendMetricView==='all'/);
+});
+
 test('backup data is prepared before live application state is replaced', () => {
   assert.match(source, /const prepared=prepareBackup\(await readJSONFile/);
   assert.match(source, /bank=prepared\.bank;attempts=prepared\.attempts/);

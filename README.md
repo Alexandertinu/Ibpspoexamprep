@@ -26,7 +26,7 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - Objective scoring using each question's marks and negative marks
 - Descriptive responses held as Pending Review until manually or AI graded
 - Subject and topic breakdowns
-- Subject performance trends for accuracy with separate average time for correct, wrong and skipped questions
+- Selectable subject trend charts for marks, correct, wrong, skipped and accuracy, plus an all-graphs view and separate timing averages
 - Automatic mistake notebook with mastery notes and targeted retry tests
 - Read-only exam-style answer review with submitted answers, correct keys, explanations and per-question time
 - Persistent per-mock AI coaching inside review: the full attempt is sent once, later questions use compact saved context, and all analyses remain in one Tutor-history conversation

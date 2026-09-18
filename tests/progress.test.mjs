@@ -12,6 +12,8 @@ test('buildSubjectTrends orders points chronologically by subject', () => {
   const [trend] = buildSubjectTrends(attempts);
   assert.equal(trend.subject, 'Quantitative Aptitude');
   assert.deepEqual(trend.points.map((point) => point.accuracy), [60, 80]);
+  assert.deepEqual(trend.points.map((point) => point.score), [5, 7.5]);
+  assert.deepEqual(trend.points.map((point) => [point.correct, point.wrong, point.skipped]), [[6, 4, 0], [8, 2, 0]]);
   assert.deepEqual(summarizeSubjectTrend(trend.points), { attempts: 2, latestAccuracy: 80, accuracyChange: 20, latestAverageCorrectSeconds: 35, latestAverageWrongSeconds: 0, latestAverageSkippedSeconds: 0, averageAccuracy: 70 });
 });
 
