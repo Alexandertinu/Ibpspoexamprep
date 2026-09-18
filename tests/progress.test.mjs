@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMistakeNotebook, buildSubjectTrends, summarizeSubjectTrend } from '../src/progress.js';
+import { averageSecondsForStatus, buildMistakeNotebook, buildSubjectTrends, summarizeSubjectTrend } from '../src/progress.js';
 
 const question = { id: 'q1', type: 'mcq', subject: 'Quantitative Aptitude', topic: 'Ratio', question: 'Ratio question' };
 const attempts = [
@@ -12,7 +12,19 @@ test('buildSubjectTrends orders points chronologically by subject', () => {
   const [trend] = buildSubjectTrends(attempts);
   assert.equal(trend.subject, 'Quantitative Aptitude');
   assert.deepEqual(trend.points.map((point) => point.accuracy), [60, 80]);
-  assert.deepEqual(summarizeSubjectTrend(trend.points), { attempts: 2, latestAccuracy: 80, accuracyChange: 20, latestAverageSeconds: 45, averageAccuracy: 70 });
+  assert.deepEqual(summarizeSubjectTrend(trend.points), { attempts: 2, latestAccuracy: 80, accuracyChange: 20, latestAverageCorrectSeconds: 35, latestAverageWrongSeconds: 0, latestAverageSkippedSeconds: 0, averageAccuracy: 70 });
+});
+
+test('status timing keeps correct, wrong and skipped questions separate', () => {
+  const rows = [
+    { status: 'Correct', activeSeconds: 30 }, { status: 'Correct', activeSeconds: 50 },
+    { status: 'Wrong', activeSeconds: 90 }, { status: 'Wrong', activeSeconds: 30 },
+    { status: 'Skipped', activeSeconds: 12 }, { status: 'Skipped', activeSeconds: 0 },
+  ];
+  assert.equal(averageSecondsForStatus(rows, 'Correct'), 40);
+  assert.equal(averageSecondsForStatus(rows, 'Wrong'), 60);
+  assert.equal(averageSecondsForStatus(rows, 'Skipped'), 6);
+  assert.equal(averageSecondsForStatus(rows, 'Pending Review'), 0);
 });
 
 test('mistake notebook keeps wrong questions and recognizes later improvement', () => {

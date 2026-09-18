@@ -1,3 +1,9 @@
+export function averageSecondsForStatus(rows, status) {
+  const matching = (Array.isArray(rows) ? rows : []).filter((row) => row.status === status);
+  if (!matching.length) return 0;
+  return Math.round(matching.reduce((sum, row) => sum + Math.max(0, Number(row.activeSeconds || 0)), 0) / matching.length);
+}
+
 export function buildSubjectTrends(attempts) {
   const bySubject = new Map();
   const ordered = (Array.isArray(attempts) ? attempts : [])
@@ -9,12 +15,16 @@ export function buildSubjectTrends(attempts) {
     subjects.forEach((subject) => {
       if (!subject?.name) return;
       if (!bySubject.has(subject.name)) bySubject.set(subject.name, []);
+      const subjectRows = (attempt.analytics.rows || []).filter((row) => row.question?.subject === subject.name);
       bySubject.get(subject.name).push({
         attemptId: attempt.id,
         title: attempt.title,
         completedAt: attempt.completedAt,
         accuracy: Number(subject.accuracy || 0),
         averageSeconds: Number(subject.averageSeconds || 0),
+        averageCorrectSeconds: averageSecondsForStatus(subjectRows, 'Correct'),
+        averageWrongSeconds: averageSecondsForStatus(subjectRows, 'Wrong'),
+        averageSkippedSeconds: averageSecondsForStatus(subjectRows, 'Skipped'),
         attempted: Number(subject.attempted || 0),
         correct: Number(subject.correct || 0),
         wrong: Number(subject.wrong || 0),
@@ -38,7 +48,9 @@ export function summarizeSubjectTrend(points) {
     attempts: safe.length,
     latestAccuracy: latest?.accuracy ?? 0,
     accuracyChange: latest && previous ? latest.accuracy - previous.accuracy : 0,
-    latestAverageSeconds: latest?.averageSeconds ?? 0,
+    latestAverageCorrectSeconds: latest?.averageCorrectSeconds ?? 0,
+    latestAverageWrongSeconds: latest?.averageWrongSeconds ?? 0,
+    latestAverageSkippedSeconds: latest?.averageSkippedSeconds ?? 0,
     averageAccuracy: safe.length ? Math.round(safe.reduce((sum, point) => sum + point.accuracy, 0) / safe.length) : 0,
   };
 }

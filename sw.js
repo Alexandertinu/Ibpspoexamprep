@@ -1,4 +1,4 @@
-const CACHE = 'po-prep-v16';
+const CACHE = 'po-prep-v17';
 const ASSETS = ['./', './index.html', './styles.css', './src/app.js', './src/analytics.js', './src/questions.js', './src/storage.js', './src/markdown.js', './src/review.js', './src/review-ai.js', './src/mock-builder.js', './src/progress.js', './src/ai.js', './manifest.webmanifest', './icons/icon-192.svg', './icons/icon-512.svg'];
 const STATIC_URLS = new Set(ASSETS.map((asset) => new URL(asset, self.location.href).href));
 
