@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { completeQuestionSets, migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, shuffleQuestionSets, starterBank } from '../src/questions.js';
+import { completeQuestionSets, isAnswerRevealingMedia, migrateStoredBank, normalizeImportedBank, normalizeImportedTest, shuffleItems, shuffleQuestionSets, starterBank } from '../src/questions.js';
 
 test('starter bank has unique valid ids and supports four subjects plus descriptive', () => {
   const ids = new Set();
@@ -21,6 +21,7 @@ test('starter bank has unique valid ids and supports four subjects plus descript
 test('normalizer accepts arbitrary subjects and descriptive questions', () => {
   const [question] = normalizeImportedBank({ questions: [{ type: 'descriptive', subject: 'Computer Knowledge', section: 'Writing', topic: 'Cybersecurity', question: 'Explain phishing.', marks: 10, rubric: ['Accuracy'] }] });
   assert.equal(question.subject, 'Computer Knowledge');
+  assert.equal(question.section, 'Writing');
   assert.equal(question.type, 'descriptive');
   assert.deepEqual(question.options, []);
   assert.equal(question.answer, null);
@@ -46,12 +47,14 @@ test('normalizer preserves table data on questions', () => {
   assert.deepEqual(question.table.rows, [['North', '100'], ['South', '200']]);
 });
 
-test('normalizer removes answer-revealing reasoning tables but keeps explicit prompt tables', () => {
+test('normalizer preserves answer-revealing reasoning tables for review and keeps explicit prompt tables', () => {
   const base = { question: 'Who sits at the end?', options: ['A', 'B'], answer: 0, subject: 'Reasoning Ability', topic: 'Seating Arrangement', explanation: 'From the final arrangement, A is at the end.' };
   const [hidden] = normalizeImportedBank([{ ...base, id: 'solution-table', table: { caption: 'Final Seating Arrangement', headers: ['Seat', 'Person'], rows: [['1', 'A']] } }]);
   const [visible] = normalizeImportedBank([{ ...base, id: 'prompt-table', table: { role: 'prompt', caption: 'Information Given', headers: ['Seat', 'Person'], rows: [['1', '?']] } }]);
-  assert.equal(hidden.table, undefined);
+  assert.ok(hidden.table);
+  assert.equal(isAnswerRevealingMedia(hidden, hidden.table), true);
   assert.ok(visible.table);
+  assert.equal(isAnswerRevealingMedia(visible, visible.table), false);
 });
 
 test('normalizer preserves image data on questions', () => {
@@ -191,4 +194,152 @@ test('course format rejects an answer key that does not match an option', () => 
 
 test('normalizeImportedTest rejects course format with no questions', () => {
   assert.throws(() => normalizeImportedTest({ course_title: 'Test', day: 1, sections: [], questions: [] }), /course format|no valid questions/);
+});
+
+test('stored-bank migration preserves valid sections, custom subjects and solution media without mutating input', () => {
+  const original = [
+    { id: 'custom-quant', subject: 'Quantitative Aptitude', section: 'Section II', topic: 'Arithmetic', source: 'Quantitative Aptitude Course' },
+    { id: 'custom-subject', subject: 'English Language and Literature', section: 'Poetry', topic: 'Verse', source: 'English Language PDF Course' },
+    { id: 'unrelated-source', subject: 'Computer Knowledge', section: 'Networks', source: 'Reasoning Ability PDF Course' },
+    { id: 'solution', subject: 'Reasoning Ability', section: 'Section A', topic: 'Puzzle', table: { role: 'solution', headers: ['Seat'], rows: [['A']] }, image: { role: 'answer', src: '/solution.png', caption: 'Answer' } },
+  ];
+  const snapshot = structuredClone(original);
+  const migrated = migrateStoredBank(original);
+  assert.deepEqual(migrated, snapshot);
+  assert.deepEqual(original, snapshot);
+  assert.notEqual(migrated, original);
+  assert.notEqual(migrated[0], original[0]);
+  assert.deepEqual(migrateStoredBank(migrated), migrated);
+  const imported = normalizeImportedBank(original.map((question) => ({ question: 'Question?', options: ['A', 'B'], answer: 0, ...question })));
+  assert.equal(imported[0].section, 'Section II');
+  assert.equal(imported[1].subject, 'English Language and Literature');
+  assert.equal(imported[2].subject, 'Computer Knowledge');
+  assert.equal(imported[3].table.role, 'solution');
+  assert.equal(imported[3].image.role, 'answer');
+  assert.deepEqual(normalizeImportedBank(JSON.parse(JSON.stringify(imported))), imported);
+});
+
+test('legacy subject repair does not flatten an explicitly named exam section', () => {
+  const [question] = migrateStoredBank([{ id: 'IBP-D17-Q002', subject: 'IBPS PO Prelims 2026 Quantitative Aptitude', section: 'Section II', topic: 'Data Interpretation', source: 'IBPS PO Prelims 2026 Quantitative Aptitude Bundle PDF Course' }]);
+  assert.equal(question.subject, 'Quantitative Aptitude');
+  assert.equal(question.section, 'Section II');
+});
+
+test('media visibility uses explicit roles and narrow captions, never unrelated answer explanations', () => {
+  const item = { topic: 'Seating Arrangement', explanation: 'The final arrangement is shown in the decoded table.' };
+  for (const caption of ['Information given', 'Seating arrangement', 'Distribution of students', 'Final round participants', 'Answer the following questions', 'Solution concentration']) {
+    assert.equal(isAnswerRevealingMedia(item, { caption }), false, caption);
+  }
+  for (const caption of ['Final seating arrangement', 'Solved arrangement', 'Decoded table', 'Answer key']) {
+    assert.equal(isAnswerRevealingMedia(item, { caption }), true, caption);
+  }
+  assert.equal(isAnswerRevealingMedia(item, { role: ' PROMPT ', caption: 'Final seating arrangement' }), false);
+  assert.equal(isAnswerRevealingMedia(item, { role: ' Question ', caption: 'Answer key' }), false);
+  assert.equal(isAnswerRevealingMedia({ topic: 'Biology' }, { role: ' Solution ' }), true);
+  const [question] = normalizeImportedBank([{ ...item, question: 'Which seat?', options: ['A', 'B'], answer: 0, table: { role: ' PROMPT ', caption: 'Final seating arrangement', headers: ['Seat'], rows: [['?']] }, image: { role: ' Question ', src: '/clues.png', caption: 'Answer key' } }]);
+  assert.equal(question.table.role, 'prompt');
+  assert.equal(question.image.role, 'question');
+  assert.equal(isAnswerRevealingMedia(question, question.table), false);
+  assert.equal(isAnswerRevealingMedia(question, question.image), false);
+});
+
+test('media title aliases remain available for visibility checks after normalization', () => {
+  const [question] = normalizeImportedBank([{ question: 'Which seat?', options: ['A', 'B'], answer: 0, topic: 'Seating Arrangement', table: { title: 'Solved arrangement', headers: ['Seat'], rows: [['A']] }, image: { title: 'Answer diagram', src: '/answer.png' } }]);
+  assert.equal(question.table.caption, 'Solved arrangement');
+  assert.equal(question.image.caption, 'Answer diagram');
+  assert.equal(isAnswerRevealingMedia(question, question.table), true);
+  assert.equal(isAnswerRevealingMedia(question, question.image), true);
+});
+
+test('solution-only media does not create inferred question sets', () => {
+  const shared = { subject: 'Reasoning Ability', topic: 'Puzzle', table: { role: 'solution', headers: ['Seat'], rows: [['A']] } };
+  const migrated = migrateStoredBank([{ id: 'a', ...shared }, { id: 'b', ...shared }]);
+  assert.equal(migrated[0].setId, undefined);
+  assert.equal(migrated[1].setId, undefined);
+  assert.ok(migrated.every((question) => question.table));
+});
+
+test('shared-context inference does not join questions from unrelated sections or sources', () => {
+  const shared = { subject: 'Computer Knowledge', topic: 'Logic', passage: 'Shared clues' };
+  const migrated = migrateStoredBank([
+    { id: 'a', source: 'Paper 1', section: 'I', ...shared },
+    { id: 'b', source: 'Paper 2', section: 'I', ...shared },
+    { id: 'c', source: 'Paper 1', section: 'II', ...shared },
+  ]);
+  assert.ok(migrated.every((question) => !question.setId));
+});
+
+function sampleCourse(title = 'IBPS Reasoning Ability PDF Course') {
+  return {
+    course_title: title, day: 1,
+    sections: [{ section_name: 'Clues', question_range: '1-2', context: { description: 'A sits next to B.' } }],
+    questions: [1, 2].map((number) => ({ question_number: number, type: 'Puzzle', question: `Question ${number}?`, options: { A: 'A', B: 'B' }, correct_answer: 'A' })),
+  };
+}
+
+test('course question and set IDs cannot overwrite or join other courses with the same prefix and day', () => {
+  const first = normalizeImportedTest(sampleCourse('IBPS Reasoning Ability PDF Course')).questions;
+  const second = normalizeImportedTest(sampleCourse('IBPS Quantitative Aptitude PDF Course')).questions;
+  assert.equal(new Set([...first, ...second].map((question) => question.id)).size, 4);
+  assert.notEqual(first[0].setId, second[0].setId);
+  assert.equal(first[0].setId, first[1].setId);
+  assert.deepEqual(completeQuestionSets([first[0]], [...first, ...second]), first);
+  assert.deepEqual(normalizeImportedTest(sampleCourse()).questions.map((question) => question.id), first.map((question) => question.id));
+  const revised = sampleCourse();
+  revised.questions[0].question = 'A different paper sharing the course title?';
+  assert.notEqual(normalizeImportedTest(revised).questions[0].id, first[0].id);
+});
+
+test('course IDs are stable when JSON object keys are reordered', () => {
+  const payload = sampleCourse();
+  const reorder = (value) => Array.isArray(value) ? value.map(reorder) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).reverse().map(([key, item]) => [key, reorder(item)])) : value;
+  assert.deepEqual(normalizeImportedTest(reorder(payload)).questions, normalizeImportedTest(payload).questions);
+});
+
+test('course conversion preserves custom subjects, prompt media, question fields and test settings', () => {
+  const payload = sampleCourse('Biology Course');
+  payload.title = 'Cell Biology Mock';
+  payload.durationMinutes = 42;
+  payload.shuffle = false;
+  payload.questions[0] = { ...payload.questions[0], subject: 'Cell Biology', section: 'Section B', passage: 'Question-specific directions', marks: 2, negativeMarks: 0, difficulty: 'Mains', table: { role: 'prompt', caption: 'Given cells', headers: ['Cell'], rows: [['A']] }, image: { role: 'prompt', src: '/cells.png' } };
+  const imported = normalizeImportedTest({ test: payload });
+  assert.equal(imported.title, payload.title);
+  assert.equal(imported.durationMinutes, 42);
+  assert.equal(imported.shuffle, false);
+  assert.equal(imported.questions[0].subject, 'Cell Biology');
+  assert.equal(imported.questions[0].section, 'Section B');
+  assert.equal(imported.questions[0].passage, 'Question-specific directions');
+  assert.equal(imported.questions[0].marks, 2);
+  assert.equal(imported.questions[0].negativeMarks, 0);
+  assert.equal(imported.questions[0].difficulty, 'Mains');
+  assert.equal(imported.questions[0].table.role, 'prompt');
+  assert.equal(imported.questions[0].image.src, '/cells.png');
+  assert.equal(imported.questions[1].subject, 'Biology');
+});
+
+test('course context tables retain explicit prompt roles and columns appearing after the first row', () => {
+  const payload = sampleCourse();
+  payload.sections[0].section_name = 'Final Seating Arrangement';
+  payload.sections[0].context = { role: 'prompt', table: [{ person: 'A' }, { person: 'B', position: '2' }] };
+  const [question] = normalizeImportedTest(payload).questions;
+  assert.equal(question.table.role, 'prompt');
+  assert.deepEqual(question.table.headers, ['person', 'position']);
+  assert.deepEqual(question.table.rows, [['A', ''], ['B', '2']]);
+  assert.equal(isAnswerRevealingMedia(question, question.table), false);
+  payload.sections[0].context.table = { role: 'prompt', headers: ['Seat'], rows: [['?']] };
+  assert.deepEqual(normalizeImportedTest(payload).questions[0].table.rows, [['?']]);
+});
+
+test('rapid imports without explicit IDs do not overwrite each other', (t) => {
+  t.mock.method(Date, 'now', () => 1000);
+  const payload = [{ question: 'Question?', options: ['A', 'B'], answer: 0 }];
+  const first = normalizeImportedBank(payload)[0];
+  const second = normalizeImportedBank(payload)[0];
+  assert.notEqual(first.id, second.id);
+  assert.match(first.id, /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/);
+});
+
+test('normalizer rejects blank options instead of silently shifting the answer key', () => {
+  assert.throws(() => normalizeImportedBank([{ question: 'Which letter?', options: ['', 'B', 'C'], answer: 1 }]), /blank option/);
+  assert.throws(() => normalizeImportedBank([null]), /must be an object/);
 });

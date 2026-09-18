@@ -97,6 +97,7 @@ export function shuffleQuestionSets(items, enabled = true, random = () => crypto
 }
 
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/;
+let importSequence = 0;
 
 function normalizeId(value, fallback, label = 'Question ID') {
   const id = String(value || fallback).trim();
@@ -127,10 +128,15 @@ export function completeQuestionSets(selected, source) {
   return output;
 }
 
+function mediaRole(media) {
+  const role = String(media?.role || '').trim().toLowerCase();
+  return ['prompt', 'question', 'solution', 'answer'].includes(role) ? role : '';
+}
+
 export function normalizeTable(table) {
   if (!table) return null;
-  const role = ['prompt', 'question', 'solution', 'answer'].includes(String(table.role || '').toLowerCase()) ? String(table.role).toLowerCase() : '';
-  const caption = String(table.caption || '').trim();
+  const role = mediaRole(table);
+  const caption = String(table.caption || table.title || '').trim();
   const headers = Array.isArray(table.headers) ? table.headers.map((cell) => String(cell ?? '')) : [];
   const rows = Array.isArray(table.rows) ? table.rows.map((row) => (Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : [])) : [];
   if (!headers.length && !rows.length) return null;
@@ -142,16 +148,19 @@ export function normalizeTable(table) {
 
 export function isAnswerRevealingMedia(item, media) {
   if (!media) return false;
-  const role = String(media.role || '').toLowerCase();
+  const role = mediaRole(media);
   if (role === 'prompt' || role === 'question') return false;
   if (role === 'solution' || role === 'answer') return true;
-  const topic = String(item.topic || '').toLowerCase();
+  const topic = String(item?.topic || '').toLowerCase();
   const caption = String(media.caption || media.title || '').toLowerCase();
-  const explanation = String(item.explanation || '').toLowerCase();
-  const reasoningSet = /puzzle|coding|seating|arrangement|classification|ordering/.test(topic);
-  const solvedCaption = /final|decoded|solution|answer|arrangement|distribution/.test(caption);
-  const solvedExplanation = /final arrangement|decoded table|solved arrangement|answer table/.test(explanation);
-  return reasoningSet && (solvedCaption || solvedExplanation);
+  const reasoningSet = /\b(puzzle|coding|seating|arrangement|classification|ordering)\b/.test(topic);
+  // The explanation describes the answer, not the role of every attached image/table.
+  const solvedCaption = /\b(?:final|solved)\b.{0,40}\b(?:arrangement|distribution|table)\b|\bdecoded\b|\b(?:solution|answer)\s+(?:table|diagram|key)\b|^\s*(?:solution|answer)\s*$/i.test(caption);
+  const headers = (media.headers || []).join(' ').toLowerCase();
+  const explanation = String(item?.explanation || '').toLowerCase();
+  const solvedClassification = /classification|puzzle/.test(topic) && /distribution/.test(caption) && /final arrangement/.test(explanation) && /students|persons/.test(headers);
+  const solvedSeats = /seating/.test(topic) && /arrangement/.test(caption) && /positions.*left.*right/.test(headers);
+  return reasoningSet && (solvedCaption || solvedClassification || solvedSeats);
 }
 
 export function normalizeImage(image) {
@@ -159,8 +168,8 @@ export function normalizeImage(image) {
   const src = String(image.src || image.url || image.data || '').trim();
   if (!src) return null;
   if (!/^(data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,|https?:\/\/|\/|\.{1,2}\/)/i.test(src)) return null;
-  const role = ['prompt', 'question', 'solution', 'answer'].includes(String(image.role || '').toLowerCase()) ? String(image.role).toLowerCase() : '';
-  return { ...(role ? { role } : {}), src, alt: String(image.alt || image.caption || 'Question diagram').trim(), caption: String(image.caption || '').trim() };
+  const role = mediaRole(image);
+  return { ...(role ? { role } : {}), src, alt: String(image.alt || image.caption || image.title || 'Question diagram').trim(), caption: String(image.caption || image.title || '').trim() };
 }
 
 function isCourseFormat(payload) {
@@ -178,8 +187,10 @@ function inferCourseSubject(value) {
 }
 
 function sharedSetSignature(question) {
-  if (question.type === 'descriptive' || (!question.passage && !question.table && !question.image)) return '';
-  return JSON.stringify([question.subject, question.topic, question.passage || '', question.table || null, question.image?.src || '']);
+  const table = isAnswerRevealingMedia(question, question.table) ? null : question.table;
+  const image = isAnswerRevealingMedia(question, question.image) ? null : question.image;
+  if (question.type === 'descriptive' || (!question.passage && !table && !image)) return '';
+  return JSON.stringify([question.source || '', question.subject, question.section || '', question.topic, question.passage || '', table || null, image?.src || '']);
 }
 
 function signatureId(signature) {
@@ -188,13 +199,27 @@ function signatureId(signature) {
   return `SET-${Math.abs(hash).toString(36)}`;
 }
 
+function courseTitle(value) {
+  return String(value || '').replace(/\s*(bundle\s+pdf\s+course|pdf\s+course|course)\s*$/i, '').trim();
+}
+
 export function migrateStoredBank(items) {
   if (!Array.isArray(items)) return items;
   const migrated = items.map((question) => {
-    const subject = inferCourseSubject(question.source || question.subject);
-    const next = subject && (question.subject !== subject || question.section !== subject) ? { ...question, subject, section: subject } : { ...question };
-    if (isAnswerRevealingMedia(next, next.table)) delete next.table;
-    if (isAnswerRevealingMedia(next, next.image)) delete next.image;
+    const next = { ...question };
+    const source = String(question.source || '').trim();
+    const oldSubject = courseTitle(source);
+    const subject = inferCourseSubject(oldSubject);
+    // Only repair the recognisable legacy converter output, never a user-defined subject/section.
+    const legacyId = String(question.id || '').startsWith(`${oldSubject.replace(/\s+/g, '').slice(0, 3).toUpperCase()}-D`)
+      && /^[A-Z0-9]{1,3}-D\d+-Q\d+$/.test(String(question.id || ''));
+    if (/\b(?:bundle\s+)?pdf\s+course\s*$/i.test(source) && legacyId && subject && oldSubject !== subject && question.subject === oldSubject) {
+      next.subject = subject;
+      const topic = String(question.topic || '').trim();
+      const section = String(question.section || '').trim();
+      if (!section || section === oldSubject || (topic && (section === topic || section.startsWith(`${topic} - `)))) next.section = subject;
+    }
+    // Keep solution media for review/export; visibility belongs to the renderer.
     return next;
   });
   const counts = new Map();
@@ -206,20 +231,36 @@ export function migrateStoredBank(items) {
   });
 }
 
+function courseImportId(payload) {
+  const stable = (value) => Array.isArray(value) ? value.map(stable) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])])) : value;
+  const identity = JSON.stringify(stable([payload.course_id || '', payload.course_title || payload.title || '', payload.day ?? '', payload.subject || '', payload.sections || [], payload.questions]));
+  let first = 2166136261, second = 5381;
+  for (let index = 0; index < identity.length; index += 1) {
+    first = Math.imul(first ^ identity.charCodeAt(index), 16777619);
+    second = Math.imul(second, 33) ^ identity.charCodeAt(index);
+  }
+  return `COURSE-${(first >>> 0).toString(36)}-${(second >>> 0).toString(36)}`;
+}
+
 function convertCourseFormat(payload) {
+  // Scope both questions and sets to the course contents, not a three-letter title/day.
+  const importId = courseImportId(payload);
   const sectionContexts = [];
   if (Array.isArray(payload.sections)) {
     payload.sections.forEach((section, sectionIndex) => {
       const range = String(section.question_range || '').match(/(\d+)\s*-\s*(\d+)/);
       if (!range) return;
-      const ctx = { start: Number(range[1]), end: Number(range[2]), description: '', table: null, setId: `COURSE-${payload.day || '0'}-SET-${sectionIndex + 1}` };
+      const ctx = { start: Number(range[1]), end: Number(range[2]), description: '', table: null, image: section.context?.image || null, subject: section.subject || '', setId: `${importId}-SET-${sectionIndex + 1}` };
       if (section.context?.description) ctx.description = String(section.context.description);
       if (Array.isArray(section.context?.table) && section.context.table.length > 0) {
         const firstRow = section.context.table[0];
-        if (typeof firstRow === 'object' && !Array.isArray(firstRow)) {
-          const headers = Object.keys(firstRow);
-          ctx.table = { caption: section.section_name || '', headers, rows: section.context.table.map((row) => headers.map((key) => String(row[key] ?? ''))) };
+        if (firstRow && typeof firstRow === 'object' && !Array.isArray(firstRow)) {
+          const headers = [...new Set(section.context.table.flatMap((row) => row && typeof row === 'object' ? Object.keys(row) : []))];
+          ctx.table = { ...(mediaRole(section.context) ? { role: mediaRole(section.context) } : {}), caption: section.section_name || '', headers, rows: section.context.table.map((row) => headers.map((key) => String(row?.[key] ?? ''))) };
         }
+      } else if (section.context?.table) {
+        ctx.table = section.context.table;
       }
       if (Array.isArray(section.context?.notes) && section.context.notes.length > 0) {
         ctx.description += (ctx.description ? '\n\n' : '') + section.context.notes.map(String).join('\n');
@@ -228,13 +269,13 @@ function convertCourseFormat(payload) {
     });
   }
 
-  const courseTitle = String(payload.course_title || '').replace(/\s*(bundle\s+pdf\s+course|pdf\s+course|course)\s*$/i, '').trim();
-  const subject = inferCourseSubject(courseTitle) || 'Quantitative Aptitude';
-  const idPrefix = courseTitle.replace(/\s+/g, '').slice(0, 3).toUpperCase() || subject.replace(/\s+/g, '').slice(0, 3).toUpperCase();
-  const title = courseTitle ? `${courseTitle} — Day ${payload.day || ''}`.replace(/\s+/g, ' ').trim() : 'Imported Mock Test';
+  const cleanCourseTitle = courseTitle(payload.course_title);
+  const defaultSubject = String(payload.subject || '').trim() || inferCourseSubject(cleanCourseTitle) || cleanCourseTitle || 'General Awareness';
+  const title = String(payload.title || '').trim() || (cleanCourseTitle ? `${cleanCourseTitle}${payload.day === undefined || payload.day === null || payload.day === '' ? '' : ` — Day ${payload.day}`}`.replace(/\s+/g, ' ').trim() : 'Imported Mock Test');
 
   const questions = payload.questions.map((item, index) => {
-    const qNum = Number(item.question_number || index + 1);
+    const qNum = Number(item.question_number ?? index + 1);
+    if (!Number.isInteger(qNum) || qNum < 1) throw new Error(`Question ${index + 1} has an invalid question number.`);
     const optionsObj = item.options || {};
     const optionEntries = Object.entries(optionsObj).map(([key, value]) => [String(key).trim().toLowerCase(), String(value).trim()]).filter(([, value]) => value).sort(([a], [b]) => a.localeCompare(b));
     const optionKeys = optionEntries.map(([key]) => key);
@@ -244,53 +285,60 @@ function convertCourseFormat(payload) {
     if (answerIndex < 0) throw new Error(`Question ${qNum} has a correct answer that does not match its option keys.`);
     const questionType = String(item.type || '').trim();
     const sectionCtx = sectionContexts.find((ctx) => qNum >= ctx.start && qNum <= ctx.end);
-    const passage = sectionCtx?.description || '';
-    const table = sectionCtx?.table || null;
+    const subject = String(item.subject || sectionCtx?.subject || defaultSubject).trim();
+    const passage = item.passage ?? sectionCtx?.description ?? '';
+    const table = item.table ?? sectionCtx?.table ?? null;
+    const image = item.image ?? sectionCtx?.image ?? null;
 
     return {
-      id: `${idPrefix}-D${payload.day || '0'}-Q${String(qNum).padStart(3, '0')}`,
+      ...item,
+      id: item.id || `${importId}-Q${String(qNum).padStart(3, '0')}`,
       type: 'mcq',
-      subject: subject,
-      section: subject,
-      topic: questionType || 'General',
-      difficulty: 'Prelims',
-      passage: passage,
+      subject,
+      section: item.section || subject,
+      topic: item.topic || questionType || 'General',
+      difficulty: item.difficulty || 'Prelims',
+      passage,
       question: String(item.question || '').trim(),
       options,
       answer: answerIndex,
-      marks: 1,
-      negativeMarks: 0.25,
+      marks: item.marks ?? 1,
+      negativeMarks: item.negativeMarks ?? 0.25,
       explanation: String(item.explanation || '').trim(),
-      source: payload.course_title || 'Imported course JSON',
-      ...(sectionCtx && (passage || table) ? { setId: sectionCtx.setId } : {}),
+      source: item.source || payload.course_title || 'Imported course JSON',
+      ...(item.setId || item.set_id ? { setId: item.setId || item.set_id } : sectionCtx && (passage || table || image) ? { setId: sectionCtx.setId } : {}),
       ...(table ? { table } : {}),
+      ...(image ? { image } : {}),
     };
   });
 
-  return { title, description: `Day ${payload.day || ''} — ${payload.total_questions || questions.length} questions`, questions };
+  return { ...payload, title, description: payload.description || `${payload.day === undefined ? '' : `Day ${payload.day} — `}${payload.total_questions || questions.length} questions`, questions };
 }
 
 export function normalizeImportedBank(payload) {
   const source = Array.isArray(payload) ? payload : payload?.questions;
   if (!Array.isArray(source)) throw new Error('Expected a JSON array or an object with a questions array.');
   const ids = new Set();
+  const importId = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${(++importSequence).toString(36)}`;
   const normalized = source.map((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error(`Question ${index + 1} must be an object.`);
     const type = item.type === 'descriptive' ? 'descriptive' : 'mcq';
     const question = String(item.question || '').trim();
-    const options = Array.isArray(item.options) ? item.options.map((option) => String(option).trim()).filter(Boolean) : [];
+    const options = Array.isArray(item.options) ? item.options.map((option) => String(option ?? '').trim()) : [];
     const rawAnswer = item.answer;
     const answer = type === 'mcq' && rawAnswer !== null && rawAnswer !== undefined && String(rawAnswer).trim() !== '' ? Number(rawAnswer) : null;
-    const id = normalizeId(item.id, `IMP-${Date.now()}-${index + 1}`);
+    const id = normalizeId(item.id, `IMP-${importId}-${index + 1}`);
     if (!question) throw new Error(`Question ${index + 1} has no question text.`);
     if (type === 'mcq' && (options.length < 2 || options.length > 6)) throw new Error(`Question ${index + 1} must have 2–6 options.`);
+    if (type === 'mcq' && options.some((option) => !option)) throw new Error(`Question ${index + 1} has a blank option; fix it without changing the answer index.`);
     if (type === 'mcq' && (!Number.isInteger(answer) || answer < 0 || answer >= options.length)) throw new Error(`Question ${index + 1} has an invalid zero-based answer index.`);
     if (ids.has(id)) throw new Error(`Duplicate question id: ${id}`);
     ids.add(id);
-    const subject = String(item.subject || 'General Awareness').trim();
-    const table = isAnswerRevealingMedia(item, item.table) ? null : normalizeTable(item.table);
-    const image = isAnswerRevealingMedia(item, item.image) ? null : normalizeImage(item.image);
+    const subject = String(item.subject || '').trim() || 'General Awareness';
+    const table = normalizeTable(item.table);
+    const image = normalizeImage(item.image);
     return {
-      id, type, subject, section: String(item.section || subject), topic: String(item.topic || 'Imported'), question,
+      id, type, subject, section: String(item.section || '').trim() || subject, topic: String(item.topic || '').trim() || 'Imported', question,
       options: type === 'mcq' ? options : [], answer,
       explanation: String(item.explanation || ''), modelAnswer: String(item.modelAnswer || ''),
       rubric: Array.isArray(item.rubric) ? item.rubric.map(String) : [], wordLimit: Math.max(0, Number(item.wordLimit) || 0),
@@ -308,8 +356,8 @@ export function normalizeImportedBank(payload) {
 
 export function normalizeImportedTest(payload) {
   let source = payload?.test && typeof payload.test === 'object' ? payload.test : (payload?.title !== undefined ? payload : null);
-  if (!source && isCourseFormat(payload)) {
-    source = convertCourseFormat(payload);
+  if (isCourseFormat(source || payload)) {
+    source = convertCourseFormat(source || payload);
   }
   if (!source) throw new Error('Expected a JSON object with a "test" wrapper, top-level test fields (title + questions), or a course format with sections and questions.');
   const title = String(source.title || source.name || '').trim();

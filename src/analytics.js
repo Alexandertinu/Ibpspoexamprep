@@ -122,6 +122,10 @@ export function buildCoachPacket(attempt, analytics) {
     responses: analytics.rows.map((row) => ({
       questionId: row.question.id, number: row.index + 1, type: row.question.type || 'mcq', subject: row.question.subject, section: row.question.section, topic: row.question.topic,
       question: row.question.question,
+      passage: row.question.passage || '', options: row.question.options || [],
+      table: row.question.table || null,
+      image: row.question.image ? { alt: row.question.image.alt, caption: row.question.image.caption, note: 'Image pixels are not included in this text packet; ask the student for the diagram if needed.' } : null,
+      negativeMarks: row.question.negativeMarks || 0,
       response: row.question.type === 'descriptive' ? (row.selected || null) : (row.selected === undefined || row.selected === null ? null : row.question.options[row.selected]),
       correctOption: row.question.type === 'descriptive' ? null : row.question.options[row.question.answer],
       modelAnswer: row.question.modelAnswer || '', rubric: row.question.rubric || [], wordLimit: row.question.wordLimit || 0,

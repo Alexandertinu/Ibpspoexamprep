@@ -2,12 +2,25 @@ function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
-function renderInline(value) {
-  return escapeHTML(value)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+function renderInline(value, allowLinks = true) {
+  const text = String(value ?? '');
+  const tokens = /`([^`]+)`|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+  let html = '', end = 0;
+  for (const match of text.matchAll(tokens)) {
+    html += escapeHTML(text.slice(end, match.index));
+    if (match[1] !== undefined) html += `<code>${escapeHTML(match[1])}</code>`;
+    else if (match[2] !== undefined) {
+      let url;
+      try { url = new URL(match[3]); } catch { /* Invalid links remain plain text. */ }
+      html += allowLinks && url && ['http:', 'https:'].includes(url.protocol)
+        ? `<a href="${escapeHTML(url.href)}" target="_blank" rel="noopener noreferrer">${renderInline(match[2], false)}</a>`
+        : escapeHTML(match[0]);
+    } else if (match[4] !== undefined) html += `<strong>${renderInline(match[4], allowLinks)}</strong>`;
+    else html += `<em>${renderInline(match[5], allowLinks)}</em>`;
+    end = match.index + match[0].length;
+  }
+  // Never run Markdown replacements over generated HTML or inside a code span.
+  return html + escapeHTML(text.slice(end));
 }
 
 function cells(line) {
@@ -76,7 +89,7 @@ export function renderMarkdown(value) {
       && !(lines[i].includes('|') && i + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[i + 1]))) {
       paragraph.push(lines[i++].trim());
     }
-    out.push(`<p>${paragraph.map(renderInline).join('<br>')}</p>`);
+    out.push(`<p>${paragraph.map((text) => renderInline(text)).join('<br>')}</p>`);
   }
 
   return out.join('');

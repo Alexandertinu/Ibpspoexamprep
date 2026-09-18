@@ -32,3 +32,20 @@ test('manual mode keeps only existing unique question IDs and the chosen duratio
   assert.equal(config.level, 'Practice');
   assert.throws(() => buildSelectedMockConfig({ title: 'Empty', questionIds: [], durationMinutes: 10 }, bank), /Select at least one/);
 });
+
+test('custom subjects remain selectable in random and exact-question mocks without a built-in subject whitelist', () => {
+  const customBank = [
+    { id: 'custom-a', subject: 'English Language and Literature', topic: 'Poetry', type: 'mcq', question: 'Identify the metre.' },
+    { id: 'custom-b', subject: 'English Language and Literature', topic: 'Poetry', type: 'descriptive', question: 'Compare the poems.' },
+    ...bank,
+  ];
+  const subject = 'English Language and Literature';
+  const random = buildRandomMockConfig({ title: 'Literature Mock', subject, topics: ['Poetry'], type: 'both', count: 2, durationMinutes: 30 }, customBank);
+  assert.deepEqual(random.subjects, [subject]);
+  assert.deepEqual(random.types, ['mcq', 'descriptive']);
+  assert.equal(random.count, 2);
+  const selected = buildSelectedMockConfig({ title: 'Literature Selection', questionIds: ['custom-b', 'custom-a'], durationMinutes: 30, shuffle: false }, customBank);
+  assert.deepEqual(selected.subjects, [subject]);
+  assert.deepEqual(selected.questionIds, ['custom-b', 'custom-a']);
+  assert.equal(selected.shuffle, false);
+});

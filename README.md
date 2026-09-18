@@ -2,6 +2,25 @@
 
 A private, offline-first exam-preparation suite built for IBPS PO preparation and flexible enough for any objective or descriptive examination. It combines a modern application workspace with a TCS-style exam window, detailed telemetry, deterministic offline coaching and optional AI assistance.
 
+## Version 3.1 — final study-workspace build
+
+- A clearer subject-first dashboard, readable typography, restrained colour, labelled navigation and a workspace-only light/dark switch. No external font/CDN dependencies are needed for practice.
+- Subject pages keep test lists visible and tuck creation/import tools into expandable sections.
+- Optional AI setup starts with an API address, model ID and key; service-specific settings are under Advanced. No AI key is required for tests, answers, trends or the mistake notebook.
+- New mock imports use separate question IDs so another paper's Q001 does not overwrite an existing mock. Question-bank imports still update matching IDs after confirmation.
+- AI replies stay attached to the chat/mock that requested them, even after you navigate elsewhere. Duplicate review requests are blocked and cached replies remain readable.
+- Solution media is retained for completed review rather than deleted on import; recognised solutions remain hidden in live questions. Explicit prompt media is respected. Automated checks cannot identify every incorrectly labelled solution, so check your imported paper before practising.
+- The original TCS-style live exam markup and existing CSS are locked by baseline tests. This build does not restyle the exam window or claim official exam certification.
+
+### Update without losing your work
+
+1. In the old version, click **Export backup** and keep the downloaded file.
+2. For a hosted app, close every tab for this app, then reopen it after deployment. Do not clear site data.
+3. For a downloaded app, replace `standalone.html`. Use the same browser; moving/renaming a local file may change where the browser stores its data.
+4. If needed, use **Settings → Import backup**. Restoring a backup removes remembered API keys for safety; enter them again in **Import & AI**.
+
+App updates on the same website origin retain browser data. Browser storage is not cloud sync. It can be cleared by the browser; backups remain important. AI calls require a compatible API and browser CORS support. Real-provider billing/availability varies and is not guaranteed by offline tests.
+
 ## Major capabilities
 
 ### Universal test engine

@@ -12,45 +12,68 @@ export function inferProvider() {
   return 'openai';
 }
 
-export function validateAIConfig(config) {
-  if (!['openai', 'anthropic', 'gemini'].includes(config.provider)) throw new Error('Choose the API format used by your provider.');
-  const url = new URL(String(config.baseUrl || '').trim());
-  if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') throw new Error('Use an HTTPS endpoint, or localhost for a trusted local model.');
-  if (!String(config.model || '').trim()) throw new Error('Enter the model ID required by your provider.');
-  const authMode = ['bearer', 'header', 'none', 'apiKey'].includes(config.authMode) ? config.authMode : 'bearer';
-  return {
-    ...config,
-    authMode: authMode === 'apiKey' ? (config.provider === 'openai' ? 'bearer' : 'header') : authMode,
-    authHeader: String(config.authHeader || providerDefaults(config.provider).authHeader || 'Authorization').trim(),
-    authPrefix: String(config.authPrefix ?? providerDefaults(config.provider).authPrefix ?? ''),
-    baseUrl: url.toString().replace(/\/+$/, ''),
-    modelsUrl: String(config.modelsUrl || '').trim().replace(/\/+$/, ''),
-    model: config.model.trim(),
-  };
+function validateEndpoint(value, label) {
+  let url;
+  try { url = new URL(String(value || '').trim()); }
+  catch { throw new Error(`Enter a valid ${label}, including https:// (or http://localhost for a trusted local model).`); }
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) throw new Error(`Use an HTTPS ${label}, or HTTP on localhost for a trusted local model.`);
+  if (url.username || url.password) throw new Error(`Remove the username or password from the ${label}. Use the API key field instead.`);
+  if (url.hash) throw new Error(`Remove the #fragment from the ${label}; it is not sent to the API.`);
+  url.pathname = url.pathname.replace(/\/+$/, '') || '/';
+  return url;
+}
+
+export function validateAIConfig(config = {}, { requireModel = true } = {}) {
+  if (!['openai', 'anthropic', 'gemini'].includes(config?.provider)) throw new Error('Choose the API format used by your provider.');
+  const url = validateEndpoint(config.baseUrl, 'API URL');
+  const model = String(config.model || '').trim();
+  if (requireModel && !model) throw new Error('Enter the model ID required by your provider.');
+  const defaults = providerDefaults(config.provider);
+  const authMode = config.authMode === 'apiKey' ? defaults.authMode : (config.authMode || defaults.authMode);
+  if (!['bearer', 'header', 'none'].includes(authMode)) throw new Error('Choose Bearer token, Custom key header, or No authentication.');
+  // Bearer mode has a standard header; custom mode uses the saved name and prefix.
+  const authHeader = authMode === 'bearer' ? 'Authorization' : String(config.authHeader || defaults.authHeader).trim();
+  const authPrefix = authMode === 'bearer' ? 'Bearer ' : String(config.authPrefix ?? '');
+  if (authMode === 'header' && !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(authHeader)) throw new Error('Enter a valid key header name, such as x-api-key (no spaces or line breaks).');
+  if (authMode === 'header' && /[^\x20-\x7e]/.test(authPrefix)) throw new Error('The key prefix must contain only plain text, without line breaks.');
+  const modelsUrl = String(config.modelsUrl || '').trim() ? validateEndpoint(config.modelsUrl, 'model-list URL') : null;
+  if (modelsUrl && modelsUrl.origin !== url.origin) throw new Error('The model-list URL must use the same origin (scheme, host and port) as the API URL so your API key is not sent to another site.');
+  return { ...config, authMode, authHeader, authPrefix, baseUrl: url.toString(), modelsUrl: modelsUrl?.toString() || '', model };
+}
+
+// Change only the pathname: query parameters belong after the derived endpoint.
+function endpointURL(config, pathFor) {
+  const url = new URL(config.baseUrl);
+  url.pathname = pathFor(url.pathname.replace(/\/+$/, ''));
+  return url.toString();
 }
 
 function modelsEndpoint(config) {
   if (config.modelsUrl) return config.modelsUrl;
-  if (config.provider === 'gemini') return `${config.baseUrl.replace(/\/+$/, '')}/models`;
-  if (config.provider === 'anthropic') return config.baseUrl.replace(/\/v1\/messages$/, '/v1/models');
-  return config.baseUrl.replace(/\/chat\/completions$/, '').replace(/\/+$/, '') + '/models';
+  if (config.provider === 'gemini') return endpointURL(config, (path) => `${path.replace(/\/models(?:\/[^/]+(?::generateContent)?)?$/, '')}/models`);
+  if (config.provider === 'anthropic') {
+    const url = new URL(anthropicEndpoint(config));
+    url.pathname = url.pathname.replace(/\/messages$/, '/models');
+    return url.toString();
+  }
+  return endpointURL(config, (path) => `${path.replace(/\/chat\/completions$/, '').replace(/\/models$/, '')}/models`);
 }
 
 function authHeaders(config, apiKey) {
-  if (!apiKey || config.authMode === 'none') return {};
-  if (config.provider === 'anthropic') return { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
-  if (config.provider === 'gemini') return { 'x-goog-api-key': apiKey };
-  return { [config.authHeader || 'Authorization']: `${config.authPrefix ?? 'Bearer '}${apiKey}` };
+  const headers = config.provider === 'anthropic' ? { 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' } : {};
+  if (apiKey && config.authMode !== 'none') headers[config.authHeader] = `${config.authPrefix}${apiKey}`;
+  return headers;
 }
 
 export async function discoverModels({ config, apiKey, timeoutMs = 30000 }) {
-  const safeConfig = validateAIConfig(config);
+  const safeConfig = validateAIConfig(config, { requireModel: false });
   if (!apiKey && safeConfig.authMode !== 'none') throw new Error('Enter an API key before fetching models, or choose no authentication for a trusted local endpoint.');
   const headers = { Accept: 'application/json', ...authHeaders(safeConfig, apiKey) };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(modelsEndpoint(safeConfig), { headers, signal: controller.signal });
+    const response = await fetch(modelsEndpoint(safeConfig), { headers, redirect: 'error', signal: controller.signal });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload?.error?.message || `Model discovery failed (${response.status}). Enter a model manually if this provider does not expose /models.`);
     const raw = safeConfig.provider === 'gemini' ? payload.models : payload.data;
@@ -59,7 +82,7 @@ export async function discoverModels({ config, apiKey, timeoutMs = 30000 }) {
     return [...new Set(models)].sort();
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('Model discovery timed out.');
-    if (error instanceof TypeError) throw new Error('The browser could not fetch models. Check the URL and the provider’s CORS policy.');
+    if (error instanceof TypeError) throw new Error('The browser could not fetch models. Check the URL and internet access. The provider must allow browser requests (CORS); redirects are blocked to protect your API key. Use the final endpoint URL.');
     throw error;
   } finally { clearTimeout(timeout); }
 }
@@ -88,11 +111,14 @@ export async function fileToAttachment(file) {
 }
 
 function geminiEndpoint(config) {
-  return `${config.baseUrl}/models/${encodeURIComponent(config.model)}:generateContent`;
+  return endpointURL(config, (path) => {
+    if (/\/models\/[^/]+:generateContent$/.test(path)) return path;
+    return `${path.replace(/\/models$/, '')}/models/${encodeURIComponent(config.model.replace(/^models\//, ''))}:generateContent`;
+  });
 }
 
 function openAIEndpoint(config) {
-  return config.baseUrl.endsWith('/chat/completions') ? config.baseUrl : `${config.baseUrl}/chat/completions`;
+  return endpointURL(config, (path) => path.endsWith('/chat/completions') ? path : `${path}/chat/completions`);
 }
 
 async function requestGemini(config, apiKey, prompt, attachment, signal) {
@@ -101,6 +127,7 @@ async function requestGemini(config, apiKey, prompt, attachment, signal) {
   if (attachment?.base64) parts.push({ inlineData: { mimeType: attachment.mimeType, data: attachment.base64 } });
   const response = await fetch(geminiEndpoint(config), {
     method: 'POST',
+    redirect: 'error',
     headers: { 'Content-Type': 'application/json', ...authHeaders(config, apiKey) },
     body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: config.temperature ?? 0.2 } }),
     signal,
@@ -123,6 +150,7 @@ async function requestOpenAI(config, apiKey, prompt, attachment, signal) {
   const headers = { 'Content-Type': 'application/json', ...authHeaders(config, apiKey) };
   const response = await fetch(openAIEndpoint(config), {
     method: 'POST',
+    redirect: 'error',
     headers,
     body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content }], temperature: config.temperature ?? 0.2 }),
     signal,
@@ -135,7 +163,10 @@ async function requestOpenAI(config, apiKey, prompt, attachment, signal) {
 }
 
 function anthropicEndpoint(config) {
-  return config.baseUrl.endsWith('/v1/messages') ? config.baseUrl : `${config.baseUrl}/v1/messages`;
+  return endpointURL(config, (path) => {
+    if (path.endsWith('/messages')) return path;
+    return `${path.endsWith('/v1') ? path : `${path}/v1`}/messages`;
+  });
 }
 
 async function requestAnthropic(config, apiKey, prompt, attachment, signal) {
@@ -145,6 +176,7 @@ async function requestAnthropic(config, apiKey, prompt, attachment, signal) {
   if (attachment?.base64 && attachment.mimeType.startsWith('image/')) content.push({ type: 'image', source: { type: 'base64', media_type: attachment.mimeType, data: attachment.base64 } });
   const response = await fetch(anthropicEndpoint(config), {
     method: 'POST',
+    redirect: 'error',
     headers: { 'Content-Type': 'application/json', ...authHeaders(config, apiKey) },
     body: JSON.stringify({ model: config.model, max_tokens: Number(config.maxTokens || 4096), messages: [{ role: 'user', content }] }),
     signal,
@@ -167,7 +199,7 @@ export async function callAI({ config, apiKey, prompt, attachment = null, timeou
     return await requestOpenAI(safeConfig, apiKey, prompt, attachment, controller.signal);
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('The model request timed out.');
-    if (error instanceof TypeError) throw new Error('The browser could not reach the endpoint. Check the URL, internet connection and the provider’s CORS policy.');
+    if (error instanceof TypeError) throw new Error('The browser could not reach the endpoint. Check the URL and internet access. The provider must allow browser requests (CORS); redirects are blocked to protect your API key. Use the final endpoint URL.');
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -176,7 +208,7 @@ export async function callAI({ config, apiKey, prompt, attachment = null, timeou
 
 export function parseJSONResponse(text) {
   const cleaned = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
-  const starts = [...cleaned].map((char, index) => ['[', '{'].includes(char) ? index : -1).filter((index) => index >= 0);
+  const starts = [...cleaned.matchAll(/[\[{]/g)].map((match) => match.index);
   if (!starts.length) throw new Error('The model did not return JSON.');
   let sawIncomplete = false;
   for (const start of starts) {
