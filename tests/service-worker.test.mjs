@@ -14,7 +14,7 @@ test('service worker caches only its explicit same-origin static allowlist', () 
 });
 
 test('service worker precaches PWA icons and all source modules', () => {
-  for (const asset of ['icon-192.svg', 'icon-512.svg', 'review-ai.js', 'mock-builder.js', 'progress.js']) assert.match(source, new RegExp(asset.replace('.', '\\.')));
+  for (const asset of ['icon-192.svg', 'icon-512.svg', 'review-ai.js', 'mock-builder.js', 'progress.js', 'practice-library.js']) assert.match(source, new RegExp(asset.replace('.', '\\.')));
 });
 
 test('manifest provides installable 192px and 512px icons', () => {

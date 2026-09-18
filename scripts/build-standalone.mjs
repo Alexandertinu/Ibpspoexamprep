@@ -6,11 +6,11 @@ const read = (path) => readFile(resolve(root, path), 'utf8');
 const stripExports = (source) => source.replace(/^\s*export\s+(?=(?:async\s+)?(?:const|let|var|function|class)\b)/gm, '');
 const stripImports = (source) => source.replace(/^import .*;\s*$/gm, '');
 
-const [styles, analytics, questions, storage, markdown, review, reviewAI, mockBuilder, progress, ai, app] = await Promise.all([
-  read('styles.css'), read('src/analytics.js'), read('src/questions.js'), read('src/storage.js'), read('src/markdown.js'), read('src/review.js'), read('src/review-ai.js'), read('src/mock-builder.js'), read('src/progress.js'), read('src/ai.js'), read('src/app.js'),
+const [styles, analytics, questions, storage, markdown, review, reviewAI, mockBuilder, progress, practiceLibrary, ai, app] = await Promise.all([
+  read('styles.css'), read('src/analytics.js'), read('src/questions.js'), read('src/storage.js'), read('src/markdown.js'), read('src/review.js'), read('src/review-ai.js'), read('src/mock-builder.js'), read('src/progress.js'), read('src/practice-library.js'), read('src/ai.js'), read('src/app.js'),
 ]);
 
-const script = [analytics, questions, storage, markdown, review, reviewAI, mockBuilder, progress, ai].map(stripExports).concat(stripImports(app)).join('\n\n');
+const script = [analytics, questions, storage, markdown, review, reviewAI, mockBuilder, progress, practiceLibrary, ai].map(stripExports).concat(stripImports(app)).join('\n\n');
 const html = `<!DOCTYPE html>
 <html lang="en">
 <head>

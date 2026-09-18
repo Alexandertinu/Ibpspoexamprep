@@ -4,6 +4,10 @@ function positiveInteger(value, label, max) {
   return number;
 }
 
+function testLevel(value) {
+  return ['Prelims', 'Mains', 'Practice'].includes(value) ? value : 'Practice';
+}
+
 function questionTypes(value) {
   if (value === 'both') return ['mcq', 'descriptive'];
   return [value === 'descriptive' ? 'descriptive' : 'mcq'];
@@ -22,7 +26,7 @@ export function matchingMockQuestions(bank, { subject = '', topics = [], type = 
   });
 }
 
-export function buildRandomMockConfig({ title, subject, topics, type, count, durationMinutes, shuffle = true }, bank) {
+export function buildRandomMockConfig({ title, subject, topics, type, count, durationMinutes, level, shuffle = true }, bank) {
   const cleanTitle = String(title || '').trim();
   if (!cleanTitle) throw new Error('Enter a test name.');
   if (!String(subject || '').trim()) throw new Error('Choose a subject.');
@@ -32,6 +36,7 @@ export function buildRandomMockConfig({ title, subject, topics, type, count, dur
   const questionCount = positiveInteger(count, 'Question count', pool.length);
   return {
     title: cleanTitle.slice(0, 120),
+    level: testLevel(level),
     description: `Random practice from ${topics.length} selected chapter${topics.length === 1 ? '' : 's'}.`,
     subjects: [subject],
     topics: [...topics],
@@ -43,7 +48,7 @@ export function buildRandomMockConfig({ title, subject, topics, type, count, dur
   };
 }
 
-export function buildSelectedMockConfig({ title, questionIds, durationMinutes, shuffle = true }, bank) {
+export function buildSelectedMockConfig({ title, questionIds, durationMinutes, level, shuffle = true }, bank) {
   const cleanTitle = String(title || '').trim();
   if (!cleanTitle) throw new Error('Enter a test name.');
   const availableIds = new Set(bank.map((question) => question.id));
@@ -52,6 +57,7 @@ export function buildSelectedMockConfig({ title, questionIds, durationMinutes, s
   const selected = bank.filter((question) => uniqueIds.includes(question.id));
   return {
     title: cleanTitle.slice(0, 120),
+    level: testLevel(level),
     description: `Created from ${uniqueIds.length} questions you selected.`,
     questionIds: uniqueIds,
     subjects: [...new Set(selected.map((question) => question.subject))],

@@ -39,6 +39,12 @@ test('desktop exam layout constrains scrolling to the question pane', () => {
   assert.match(styles, /\.exam-foot\{[^}]*flex:0 0 48px/);
 });
 
+test('Practice uses subject navigation, level filters and completion states', () => {
+  for (const text of ['What do you want to improve?', 'All subjects', 'Prelims', 'Mains', 'Practice', 'Completed', 'Untouched', 'Review latest']) assert.ok(source.includes(text), `missing Practice UI: ${text}`);
+  assert.match(source, /if\(!practiceSubject\)return renderPracticeHome/);
+  assert.match(source, /data-practice-subject/);
+});
+
 test('performance trend offers five metrics and an all-graphs view', () => {
   for (const label of ['Accuracy', 'Marks obtained', 'Correct questions', 'Wrong questions', 'Skipped questions', 'All graphs']) assert.ok(source.includes(label), `missing trend control: ${label}`);
   assert.match(source, /trendMetricView==='all'/);

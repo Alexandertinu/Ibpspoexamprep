@@ -15,10 +15,11 @@ test('matchingMockQuestions filters by subject, chapters, type and search text',
 });
 
 test('random chapter mode validates inputs and creates a random-selection config', () => {
-  const config = buildRandomMockConfig({ title: 'Ratio Drill', subject: 'Quantitative Aptitude', topics: ['Ratio'], type: 'mcq', count: 2, durationMinutes: 15, shuffle: true }, bank);
+  const config = buildRandomMockConfig({ title: 'Ratio Drill', subject: 'Quantitative Aptitude', topics: ['Ratio'], type: 'mcq', count: 2, durationMinutes: 15, level: 'Prelims', shuffle: true }, bank);
   assert.equal(config.selectionStrategy, 'random');
   assert.equal(config.count, 2);
   assert.equal(config.durationMinutes, 15);
+  assert.equal(config.level, 'Prelims');
   assert.deepEqual(config.topics, ['Ratio']);
   assert.throws(() => buildRandomMockConfig({ title: 'Bad', subject: 'Quantitative Aptitude', topics: ['Ratio'], count: 3, durationMinutes: 10 }, bank), /Question count/);
 });
@@ -28,5 +29,6 @@ test('manual mode keeps only existing unique question IDs and the chosen duratio
   assert.deepEqual(config.questionIds, ['q3', 'q1']);
   assert.equal(config.durationMinutes, 12);
   assert.equal(config.shuffle, false);
+  assert.equal(config.level, 'Practice');
   assert.throws(() => buildSelectedMockConfig({ title: 'Empty', questionIds: [], durationMinutes: 10 }, bank), /Select at least one/);
 });

@@ -10,6 +10,8 @@ A private, offline-first exam-preparation suite built for IBPS PO preparation an
 - User-created subject compartments and chapters/topics
 - Any subject, topic or section name, including JSON-imported subjects and chapters
 - Reasoning, Quantitative Aptitude, English, General Awareness and Descriptive starter content
+- Subject-first Practice library with separate Reasoning, Quant, English, General Awareness and custom subject workspaces
+- All, Prelims, Mains and Practice filters with completed/untouched test status and latest results
 - Simple custom mock builder with chapter-based random selection or exact manual question selection
 - User-controlled test name, question count, duration and question shuffling
 - Shared DI, puzzle and passage sets that stay together when question order is shuffled
@@ -157,6 +159,7 @@ Imported questions merge by ID; an existing ID is replaced. Always verify AI-gen
 - `src/review-ai.js` — question-focused AI coaching prompts and chat identity
 - `src/mock-builder.js` — simple chapter-based and manual mock creation validation
 - `src/progress.js` — subject trends and mistake-notebook calculations
+- `src/practice-library.js` — subject grouping, level filters and completion status
 - `src/storage.js` — offline persistence and backups
 - `tests/` — automated regression tests
 - `ci-workflow.example.yml` — optional private CI template; copy it to `.github/workflows/ci.yml` when workflow-write permission is available
