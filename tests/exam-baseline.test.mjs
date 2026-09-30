@@ -8,7 +8,7 @@ test('all existing styles remain byte-for-byte unchanged before the scoped works
  assert.equal(hash(css.subarray(0,40864)),'5afcde578b9ba9c86d79d657f05bccf27aeef168327197298362cfc0af882860');
 });
 test('TCS live exam markup is unchanged from the approved baseline',()=>{
- const source=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../src/app.js',import.meta.url),'utf8')+'\n\n'+readFileSync(new URL('../src/app-views.js',import.meta.url),'utf8');
  const part=source.slice(source.indexOf('function renderExam('),source.indexOf('function examLegend('));
  const markup=part.slice(part.indexOf('app.innerHTML='),part.indexOf(';bindExam();'));
  assert.equal(hash(markup),'b71f14435f37ec4f0f1e7d42bffc3f842d93fb086281d28f6400c482bd757978');

@@ -13,7 +13,7 @@ import * as progress from '../src/progress.js';
 import * as library from '../src/practice-library.js';
 import * as ai from '../src/ai.js';
 
-const source = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8').replace(/^import .*;\s*$/gm, '');
+const source = (readFileSync(new URL('../src/app.js', import.meta.url), 'utf8') + '\n\n' + readFileSync(new URL('../src/app-views.js', import.meta.url), 'utf8')).replace(/^import .*;\s*$/gm, '');
 function runtime(){
   const elements=new Map();
   const element=()=>({value:'',disabled:false,checked:false,innerHTML:'',textContent:'',dataset:{},style:{},children:[],classList:{add(){},remove(){},toggle(){}},addEventListener(){},remove(){},focus(){},select(){},scrollIntoView(){},querySelector(){return element()},querySelectorAll(){return []}});
