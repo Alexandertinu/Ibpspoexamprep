@@ -40,3 +40,14 @@ body.dark .app-shell :is(.notice,.plain-note,.insights){background:#202f45;borde
 @media(prefers-reduced-motion:reduce){.app-shell *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 @media(max-width:760px){.app-shell .nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible;gap:3px}.app-shell .nav-btn{padding:7px 3px;min-width:0;font-size:9px}.app-shell .nav-icon{flex-basis:18px}.app-shell .nav-label{white-space:nowrap}body.tutor-view .app-shell .content{height:calc(100dvh - 190px)}}
+
+/* ---- Trend chart visual refresh (overrides) ---- */
+.trend-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4;opacity:.7}
+.trend-chart text{fill:var(--muted);font-size:10px}
+.trend-xlabel{font-weight:600}
+.trend-line{fill:none;stroke:var(--metric-color,var(--blue));stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.trend-area{stroke:none}
+.trend-dot{fill:var(--surface);stroke:var(--metric-color,var(--blue));stroke-width:3;transition:r .15s ease}
+.trend-dot:hover{r:7}
+.trend-dot.latest{fill:var(--metric-color,var(--blue))}
+.metric-chart-card>header{background:linear-gradient(180deg,var(--surface),var(--surface2))}
